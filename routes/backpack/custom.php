@@ -16,6 +16,15 @@ Route::group([
     ),
     'namespace' => 'App\Http\Controllers\Admin',
 ], function () { // custom admin routes
+    Route::crud('user', 'UserCrudController');
+    Route::crud('tag', 'TagCrudController');
+    Route::crud('application', 'ApplicationCrudController');
+    Route::crud('event', 'EventCrudController');
+    Route::crud('role', 'RoleCrudController');
+    Route::crud('permission', 'PermissionCrudController');
+    Route::crud('event-approval', 'EventApprovalCrudController');
+    Route::crud('approved-event', 'ApprovedEventCrudController');
+    Route::crud('event-submission', 'EventSubmissionCrudController');
 }); // this should be the absolute last line of this file
 
 /**

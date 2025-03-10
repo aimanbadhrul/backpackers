@@ -2,16 +2,18 @@
 
 namespace App\Models;
 
+use Spatie\Permission\Traits\HasRoles;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Notifications\Notifiable;
+use Backpack\CRUD\app\Models\Traits\CrudTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
+    use CrudTrait;
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
-
+    use HasFactory, Notifiable, HasRoles;
     /**
      * The attributes that are mass assignable.
      *
@@ -22,7 +24,7 @@ class User extends Authenticatable
         'email',
         'password',
     ];
-
+    protected $guard_name = 'backpack';
     /**
      * The attributes that should be hidden for serialization.
      *
@@ -38,6 +40,7 @@ class User extends Authenticatable
      *
      * @return array<string, string>
      */
+
     protected function casts(): array
     {
         return [
