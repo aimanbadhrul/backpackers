@@ -30,6 +30,8 @@ class EventSubmissionCrudController extends CrudController
         CRUD::setModel(Event::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/event-submission');
         CRUD::setEntityNameStrings('event submission', 'event submissions');
+        CRUD::setHeading('Event Submissions');
+        CRUD::setSubheading('Manage your submitted events');
     }
 
     /**
@@ -40,12 +42,14 @@ class EventSubmissionCrudController extends CrudController
      */
     protected function setupListOperation()
     {
-        CRUD::setEntityNameStrings('event', 'event');
+        CRUD::setEntityNameStrings('event submission', 'event submissions');
         $this->crud->removeButton('create');
 
         if (backpack_user()->hasRole('Event Leader')) {
             CRUD::addClause('where', 'created_by', backpack_user()->id);
         }
+
+        CRUD::addClause('where', 'status', '!=', 'approved');
 
         CRUD::addColumn(['name' => 'title', 'label' => 'Event Title']);
         CRUD::addColumn(['name' => 'createdBy.name', 'label' => 'Created By']);
@@ -56,21 +60,11 @@ class EventSubmissionCrudController extends CrudController
             'name' => 'status',
             'label' => 'Status',
             'type' => 'custom_html',
-            'value' => function ($entry) {
-                $status = $entry->status;
-                $colors = [
-                    'draft' => 'secondary',   // Gray
-                    'submitted' => 'info',    // Blue
-                    // 'pending' => 'warning',   // Yellow
-                    'approved' => 'success',  // Green
-                    'rejected' => 'danger',   // Red
-                ];
-                $badgeColor = $colors[$status] ?? 'dark'; // Default to dark if status is unknown
-        
-                return '<span class="badge bg-'.$badgeColor.'">'.ucfirst($status).'</span>';
-            },
+            'value' => fn($entry) => $entry->getStatusBadge(),
             'escaped' => false, // Allows HTML rendering
         ]);
+
+        CRUD::addButtonFromModelFunction('line', 'submit_for_approval', 'submitButton', 'end');
     }
 
     /**
@@ -136,5 +130,21 @@ class EventSubmissionCrudController extends CrudController
     protected function setupUpdateOperation()
     {
         $this->setupCreateOperation();
+
+        $event = $this->crud->getCurrentEntry();
+
+        if (backpack_user()->hasRole('Event Leader')) {
+            if (!$event->canEdit()) {
+                abort(403, 'You are not allowed to edit this event.');
+            }
+        }
+        
+        if ($event->canSubmitForApproval()) {
+            CRUD::addSaveAction([
+                'name' => 'submit_for_approval',
+                'redirect' => fn($crud, $request, $itemId) => url('admin/event/' . $itemId . '/submit'),
+                'button_text' => 'Submit for Approval',
+            ]);
+        }
     }
 }

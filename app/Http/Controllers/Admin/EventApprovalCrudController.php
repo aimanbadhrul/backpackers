@@ -28,7 +28,7 @@ class EventApprovalCrudController extends CrudController
      */
     public function setup()
     {
-        CRUD::setModel(\App\Models\Event::class);
+        CRUD::setModel(Event::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/event-approval');
         CRUD::setEntityNameStrings('event approval', 'event approvals');
 
@@ -78,6 +78,10 @@ class EventApprovalCrudController extends CrudController
 
         CRUD::addButtonFromModelFunction('line', 'reject', 'rejectButton', 'end');
         CRUD::addButtonFromModelFunction('line', 'approve', 'approveButton', 'end');
+        if (!backpack_user()->hasRole('Superadmin')) {
+            CRUD::removeButton('update');
+            CRUD::removeButton('delete');
+        }
     }
 
     /**
@@ -126,5 +130,22 @@ class EventApprovalCrudController extends CrudController
 
         Alert::error('Event Rejected!')->flash();
         return redirect()->back();
+    }
+
+    protected function setupShowOperation()
+    {
+        CRUD::setValidation(EventApprovalRequest::class);
+        CRUD::addColumn(['name' => 'title', 'label' => 'Event Title']);
+        CRUD::addColumn(['name' => 'createdBy.name', 'label' => 'Created By']);
+        CRUD::addColumn(['name' => 'location', 'label' => 'Location']);
+        CRUD::addColumn(['name' => 'description', 'label' => 'Description']);
+        CRUD::addColumn(['name' => 'max_participants', 'label' => 'Maximum Participants']);
+        CRUD::addColumn(['name' => 'start_date', 'label' => 'Start Date']);
+        CRUD::addColumn(['name' => 'end_date', 'label' => 'End Date']);
+        CRUD::removeButton('update'); // Remove Edit button
+        CRUD::removeButton('delete'); // Remove Delete button
+
+        CRUD::addButtonFromModelFunction('line', 'reject', 'rejectButtonShow', 'beginning');
+        CRUD::addButtonFromModelFunction('line', 'approve', 'approveButtonShow', 'beginning');
     }
 }

@@ -130,5 +130,4 @@ class RoleCrudController extends CrudController
             },
         ]);
     }
-
 }

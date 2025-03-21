@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
+use App\Models\Event;
+use Illuminate\Database\Eloquent\Model;
 use Backpack\CRUD\app\Models\Traits\CrudTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 
 class Application extends Model
 {
@@ -21,7 +22,12 @@ class Application extends Model
     // protected $primaryKey = 'id';
     // public $timestamps = false;
     protected $guarded = ['id'];
-    // protected $fillable = [];
+    protected $fillable = [
+        'event_id', 'user_id', 'status', 'notes', 'full_name', 'email', 'phone',
+        'emergency_contact_name', 'emergency_contact_phone', 'submission_date',
+        'approval_date', 'rejection_reason', 'payment_status', 'group', 'special_requests'
+    ];
+    
     // protected $hidden = [];
 
     /*
@@ -31,7 +37,7 @@ class Application extends Model
     */
     public function event()
     {
-        return $this->belongsTo(\App\Models\Event::class);
+        return $this->belongsTo(Event::class);
     }
     public function user()
     {
