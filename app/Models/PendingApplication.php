@@ -6,7 +6,7 @@ use Backpack\CRUD\app\Models\Traits\CrudTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class EventSubmission extends Model
+class PendingApplication extends Application
 {
     use CrudTrait;
     use HasFactory;
@@ -17,7 +17,7 @@ class EventSubmission extends Model
     |--------------------------------------------------------------------------
     */
 
-    protected $table = 'event_submissions';
+    protected $table = 'applications';
     // protected $primaryKey = 'id';
     // public $timestamps = false;
     protected $guarded = ['id'];

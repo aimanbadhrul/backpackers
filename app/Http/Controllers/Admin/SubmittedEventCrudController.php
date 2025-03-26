@@ -3,16 +3,17 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Event;
-use App\Http\Requests\EventSubmissionRequest;
+use Prologue\Alerts\Facades\Alert;
+use App\Http\Requests\SubmittedEventRequest;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
 
 /**
- * Class EventSubmissionCrudController
+ * Class EventApprovalCrudController
  * @package App\Http\Controllers\Admin
  * @property-read \Backpack\CRUD\app\Library\CrudPanel\CrudPanel $crud
  */
-class EventSubmissionCrudController extends CrudController
+class SubmittedEventCrudController extends CrudController
 {
     use \Backpack\CRUD\app\Http\Controllers\Operations\ListOperation;
     use \Backpack\CRUD\app\Http\Controllers\Operations\CreateOperation;
@@ -28,8 +29,14 @@ class EventSubmissionCrudController extends CrudController
     public function setup()
     {
         CRUD::setModel(Event::class);
-        CRUD::setRoute(config('backpack.base.route_prefix') . '/event-submission');
-        CRUD::setEntityNameStrings('event submission', 'event submissions');
+        CRUD::setRoute(backpack_url('submitted-event'));
+        CRUD::setEntityNameStrings('Submitted Event', 'Submitted Events');
+        CRUD::setHeading('Submitted Events');
+
+        // Only Office Admins can access this
+        // if (!backpack_user()->can('approve events')) {
+        //     abort(403);
+        // }
     }
 
     /**
@@ -40,15 +47,10 @@ class EventSubmissionCrudController extends CrudController
      */
     protected function setupListOperation()
     {
-        CRUD::setEntityNameStrings('event', 'event');
         $this->crud->removeButton('create');
-
-        if (backpack_user()->hasRole('Event Leader')) {
-            CRUD::addClause('where', 'created_by', backpack_user()->id);
-        }
-
         CRUD::addColumn(['name' => 'title', 'label' => 'Event Title']);
         CRUD::addColumn(['name' => 'createdBy.name', 'label' => 'Created By']);
+        CRUD::addColumn(['name' => 'location', 'label' => 'Location']);
         CRUD::addColumn(['name' => 'start_date', 'label' => 'Start Date']);
         CRUD::addColumn(['name' => 'end_date', 'label' => 'End Date']);
         
@@ -71,6 +73,19 @@ class EventSubmissionCrudController extends CrudController
             },
             'escaped' => false, // Allows HTML rendering
         ]);
+
+        // Show only events that are "submitted"
+        $this->crud->addClause('where', 'status', 'submitted');
+
+        if (backpack_user()->can('approve events')) {
+            CRUD::addButtonFromModelFunction('line', 'reject', 'rejectButton', 'end');
+            CRUD::addButtonFromModelFunction('line', 'approve', 'approveButton', 'end');
+        }
+
+        if (!backpack_user()->hasRole('Superadmin')) {
+            CRUD::removeButton('update');
+            CRUD::removeButton('delete');
+        }
     }
 
     /**
@@ -81,50 +96,13 @@ class EventSubmissionCrudController extends CrudController
      */
     protected function setupCreateOperation()
     {
-        CRUD::setValidation(EventSubmissionRequest::class);
-        CRUD::setHeading('Submit Event');
-        CRUD::setSubheading('Fill in event details & submit for approval');
-        
-        CRUD::field('title')
-        ->type('text')
-        ->label('Event Title')
-        ->attributes(['required' => 'required']);
+        CRUD::setValidation(SubmittedEventRequest::class);
+        CRUD::setFromDb(); // set fields from db columns.
 
-        CRUD::field('description')
-        ->type('textarea')
-        ->label('Description');
-
-        CRUD::field('start_date')
-        ->type('date')
-        ->label('Start Date')
-        ->attributes(['required' => 'required']);
-
-        CRUD::field('end_date')
-        ->type('date')
-        ->label('End Date')
-        ->attributes(['required' => 'required']);
-
-        CRUD::field('max_participants')
-        ->type('number')
-        ->label('Maximum Participants')
-        ->attributes(['min' => 1, 'required' => 'required']);
-
-        CRUD::field('cost')
-        ->type('number')
-        ->label('Cost (RM)')
-        ->prefix('RM ')
-        ->attributes(['min' => 0, 'step' => '0.01']);
-
-        if (backpack_user() && backpack_user()->can('approve events')) {
-            CRUD::addField([
-                'name' => 'status',
-                'label' => 'Status',
-                'type' => 'select_from_array',
-                'options' => Event::getStatuses(),
-                'allows_null' => false, // Ensures a selection is made
-                'default' => 'draft', // Default to Draft
-            ]);
-        }
+        /**
+         * Fields can be defined using the fluent syntax:
+         * - CRUD::field('price')->type('number');
+         */
     }
 
     /**
@@ -136,5 +114,42 @@ class EventSubmissionCrudController extends CrudController
     protected function setupUpdateOperation()
     {
         $this->setupCreateOperation();
+    }
+
+    public function approve($id)
+    {
+        $event = Event::findOrFail($id);
+        $event->status = 'approved';
+        $event->save();
+
+        Alert::success('Event Approved!')->flash();
+        return redirect()->back();
+    }
+
+    public function reject($id)
+    {
+        $event = Event::findOrFail($id);
+        $event->status = 'rejected';
+        $event->save();
+
+        Alert::error('Event Rejected!')->flash();
+        return redirect()->back();
+    }
+
+    protected function setupShowOperation()
+    {
+        CRUD::setValidation(SubmittedEventRequest::class);
+        CRUD::addColumn(['name' => 'title', 'label' => 'Event Title']);
+        CRUD::addColumn(['name' => 'createdBy.name', 'label' => 'Created By']);
+        CRUD::addColumn(['name' => 'location', 'label' => 'Location']);
+        CRUD::addColumn(['name' => 'description', 'label' => 'Description']);
+        CRUD::addColumn(['name' => 'max_participants', 'label' => 'Maximum Participants']);
+        CRUD::addColumn(['name' => 'start_date', 'label' => 'Start Date']);
+        CRUD::addColumn(['name' => 'end_date', 'label' => 'End Date']);
+        CRUD::removeButton('update'); // Remove Edit button
+        CRUD::removeButton('delete'); // Remove Delete button
+
+        CRUD::addButtonFromModelFunction('line', 'reject', 'rejectButtonShow', 'beginning');
+        CRUD::addButtonFromModelFunction('line', 'approve', 'approveButtonShow', 'beginning');
     }
 }

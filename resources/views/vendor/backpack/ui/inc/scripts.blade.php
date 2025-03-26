@@ -32,3 +32,15 @@
 @push('after_scripts')
     @basset(base_path('vendor/backpack/crud/src/resources/assets/js/common.js'))
 @endpush
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        fetch(window.location.href)
+            .then(response => {
+                if (response.status === 403) {
+                    alert("You are not allowed to edit this event.");
+                    window.history.back(); // Go back to the previous page
+                }
+            });
+    });
+    </script>
