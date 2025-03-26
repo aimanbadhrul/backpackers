@@ -33,7 +33,7 @@ class ApplicationCrudController extends CrudController
     {
         CRUD::setModel(Application::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/application');
-        CRUD::setEntityNameStrings('application', 'applications');
+        CRUD::setEntityNameStrings('Application', 'Applications');
     }
 
     /**
@@ -99,7 +99,7 @@ class ApplicationCrudController extends CrudController
         CRUD::column('approval_date')->label('Approved At');
         CRUD::column('payment_status')->label('Payment');
         
-        if ($user->can('approve applications')) {
+        if ($user->hasRole('Event Leader') || $user->hasRole('Superadmin')) {
         CRUD::addButtonFromModelFunction('line', 'reject', 'rejectButton', 'end');
         CRUD::addButtonFromModelFunction('line', 'approve', 'approveButton', 'end');
         }
@@ -122,7 +122,7 @@ class ApplicationCrudController extends CrudController
             'entity'    => 'event',
             'attribute' => 'title', // The column to display in the dropdown
             'model'     => Event::class,
-            'tab' => 'Mandatory Details'
+            'tab' => 'Details'
         ]);
     
         CRUD::addField([
@@ -132,56 +132,56 @@ class ApplicationCrudController extends CrudController
             'entity' => 'user',
             'attribute' => 'name',
             'model' => User::class,
-            'tab' => 'Mandatory Details'
+            'tab' => 'Details'
         ]);
 
         CRUD::addField([
             'name' => 'full_name',
             'label' => 'Full Name',
             'type' => 'text',
-            'tab' => 'Mandatory Details'
+            'tab' => 'Details'
         ]);
     
         CRUD::addField([
             'name' => 'email',
             'label' => 'Email',
             'type' => 'email',
-            'tab' => 'Mandatory Details'
+            'tab' => 'Details'
         ]);
 
         CRUD::addField([
             'name' => 'phone',
             'label' => 'Phone',
             'type' => 'text',
-            'tab' => 'Mandatory Details'
+            'tab' => 'Details'
         ]);
     
         CRUD::addField([
             'name' => 'emergency_contact_name',
             'label' => 'Emergency Contact Name',
             'type' => 'text',
-            'tab' => 'Mandatory Details'
+            'tab' => 'Details'
         ]);
     
         CRUD::addField([
             'name' => 'emergency_contact_phone',
             'label' => 'Emergency Contact Phone',
             'type' => 'text',
-            'tab' => 'Mandatory Details'
+            'tab' => 'Details'
         ]);
 
         CRUD::addField([
             'name' => 'special_requests',
             'label' => 'Special Requests',
             'type' => 'textarea',
-            'tab' => 'Additional Information'
+            'tab' => 'Details'
         ]);
 
         CRUD::addField([
             'name'  => 'notes',
             'label' => 'Notes',
             'type'  => 'textarea',
-            'tab' => 'Additional Information'
+            'tab' => 'Details'
         ]);
 
         CRUD::addField([
@@ -192,16 +192,11 @@ class ApplicationCrudController extends CrudController
         ]);
 
         CRUD::addField([
-            'name'  => 'status',
-            'label' => 'Status',
-            'type'  => 'select_from_array',
-            'options' => [
-                'pending'  => 'Pending',
-                'approved' => 'Approved',
-                'rejected' => 'Rejected',
-            ],
-            'sortable',
-            'tab' => 'Status'
+            'name'    => 'status',
+            'label'   => 'Status',
+            'type'    => 'select_from_array',
+            'options' => Application::getStatusOptions(), // Fetch dynamically
+            'tab'     => 'Status'
         ]);
     
         CRUD::addField([
@@ -243,19 +238,22 @@ class ApplicationCrudController extends CrudController
     protected function setupUpdateOperation()
     {
         $this->setupCreateOperation();
-
-        CRUD::field('status')->type('select_from_array')
-        ->options([
-            'pending'  => 'Pending',
-            'approved' => 'Approved',
-            'rejected' => 'Rejected',
-        ])
-        ->label('Status');
     }
 
     public function approve($id)
     {
         $application = Application::findOrFail($id);
+        $event = $application->event;
+
+        $approvedCount = Application::where('event_id', $event->id)
+        ->where('status', 'approved')
+        ->count();
+
+        if ($approvedCount >= $event->max_participants) {
+            Alert::error("Maximum participant limit ({$event->max_participants}) exceeded!")->flash();
+            return redirect()->back();
+        }
+
         $application->update(['status' => 'approved']);
     
         Alert::success('Application approved!')->flash();
@@ -270,6 +268,24 @@ class ApplicationCrudController extends CrudController
         Alert::error('Application rejected!')->flash();
         return redirect()->back();
     }
+
+    public function confirm(Application $application)
+{
+    if ($application->status !== 'approved') {
+        Alert::error('Only approved applications can be confirmed!')->flash();
+        return redirect()->back();
+    }
+
+    if ($application->payment_status === 'pending') {
+        Alert::error('Payment must be completed before confirming!')->flash();
+        return redirect()->back();
+    }
+
+    $application->update(['status' => 'confirmed']);
+
+    Alert::success('Application successfully confirmed!')->flash();
+    return redirect()->back();
+}
     
     protected function setupShowOperation()
     {

@@ -22,9 +22,14 @@ Route::group([
     Route::crud('event', 'EventCrudController');
     Route::crud('role', 'RoleCrudController');
     Route::crud('permission', 'PermissionCrudController');
-    Route::crud('event-approval', 'EventApprovalCrudController');
+    Route::crud('draft-event', 'DraftEventCrudController');
+    Route::crud('submitted-event', 'SubmittedEventCrudController');
     Route::crud('approved-event', 'ApprovedEventCrudController');
-    Route::crud('event-submission', 'EventSubmissionCrudController');
+    Route::crud('user-profile', 'UserProfileController');
+    Route::crud('pending-application', 'PendingApplicationCrudController');
+    Route::crud('approved-application', 'ApprovedApplicationCrudController');
+    Route::crud('confirmed-application', 'ConfirmedApplicationCrudController');
+    Route::crud('rejected-application', 'RejectedApplicationCrudController');
 }); // this should be the absolute last line of this file
 
 /**

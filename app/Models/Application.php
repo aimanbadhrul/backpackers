@@ -27,6 +27,16 @@ class Application extends Model
         'emergency_contact_name', 'emergency_contact_phone', 'submission_date',
         'approval_date', 'rejection_reason', 'payment_status', 'group', 'special_requests'
     ];
+
+    public static function getStatusOptions()
+    {
+        return [
+            'pending'   => 'Pending',
+            'approved'  => 'Approved',
+            'rejected'  => 'Rejected',
+            'confirmed' => 'Confirmed',
+        ];
+    }
     
     // protected $hidden = [];
 
@@ -72,7 +82,10 @@ class Application extends Model
     </a></span>';
     }
     
-
+    public function isConfirmed()
+    {
+        return $this->status === 'confirmed';
+    }
     /*
     |--------------------------------------------------------------------------
     

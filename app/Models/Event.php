@@ -80,8 +80,8 @@ public function getStatusBadge()
         return ''; // Only show buttons for submitted events
     }
 
-    $approveUrl = route('admin.event-approval.approve', $this->id);
-    $rejectUrl = route('admin.event-approval.reject', $this->id);
+    $approveUrl = route('admin.submitted-event.approve', $this->id);
+    $rejectUrl = route('admin.submitted-event.reject', $this->id);
 
     return '
         <div class="text-end">
@@ -100,7 +100,7 @@ public function getStatusBadge()
         return ''; // No button if already approved/rejected
     }
 
-    $approveUrl = route('admin.event-approval.approve', $this->id);
+    $approveUrl = route('admin.submitted-event.approve', $this->id);
 
 
     return '<span class="float-end"><a href="' . $approveUrl . '" class="btn btn-sm btn-success" data-bs-toggle="tooltip" title="Approve">
@@ -114,7 +114,7 @@ public function getStatusBadge()
         return ''; // No button if already approved/rejected
     }
 
-    $rejectUrl = route('admin.event-approval.reject', $this->id);
+    $rejectUrl = route('admin.submitted-event.reject', $this->id);
 
 
     return '<span class="float-end"><a href="' . $rejectUrl . '" class="ms-2 btn btn-sm  btn-danger" data-bs-toggle="tooltip" title="Reject">
@@ -128,7 +128,7 @@ if ($this->status !== 'submitted') {
     return ''; // No button if already approved/rejected
 }
 
-$approveUrl = route('admin.event-approval.approve', $this->id);
+$approveUrl = route('admin.submitted-event.approve', $this->id);
 
 
 return '<a href="' . $approveUrl . '" class="btn btn-sm btn-success" title="Approve">
@@ -141,7 +141,7 @@ public function rejectButtonShow()
         return ''; // No button if already approved/rejected
     }
 
-    $rejectUrl = route('admin.event-approval.reject', $this->id);
+    $rejectUrl = route('admin.submitted-event.reject', $this->id);
 
     return '<a href="' . $rejectUrl . '" class="btn btn-sm btn-danger" title="Reject">
                 <i class="la la-times"></i>Reject

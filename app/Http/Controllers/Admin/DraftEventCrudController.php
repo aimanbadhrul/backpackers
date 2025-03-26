@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Event;
-use App\Http\Requests\EventSubmissionRequest;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
 
@@ -12,7 +11,7 @@ use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
  * @package App\Http\Controllers\Admin
  * @property-read \Backpack\CRUD\app\Library\CrudPanel\CrudPanel $crud
  */
-class EventSubmissionCrudController extends CrudController
+class DraftEventCrudController extends CrudController
 {
     use \Backpack\CRUD\app\Http\Controllers\Operations\ListOperation;
     use \Backpack\CRUD\app\Http\Controllers\Operations\CreateOperation;
@@ -28,10 +27,10 @@ class EventSubmissionCrudController extends CrudController
     public function setup()
     {
         CRUD::setModel(Event::class);
-        CRUD::setRoute(config('backpack.base.route_prefix') . '/event-submission');
-        CRUD::setEntityNameStrings('event submission', 'event submissions');
-        CRUD::setHeading('Event Submissions');
-        CRUD::setSubheading('Manage your submitted events');
+        CRUD::setRoute(backpack_url('draft-event'));
+        CRUD::setEntityNameStrings('Draft Event', 'Draft Events');
+        CRUD::setHeading('Drafts');
+        CRUD::setSubheading('Manage your event drafts');
     }
 
     /**
@@ -42,14 +41,15 @@ class EventSubmissionCrudController extends CrudController
      */
     protected function setupListOperation()
     {
-        CRUD::setEntityNameStrings('event submission', 'event submissions');
-        $this->crud->removeButton('create');
+        CRUD::setEntityNameStrings('Event', 'Events');
+        // $this->crud->removeButton('create');
+        // CRUD::setCreateButtonRoute('admin.event.create');
 
         if (backpack_user()->hasRole('Event Leader')) {
             CRUD::addClause('where', 'created_by', backpack_user()->id);
         }
 
-        CRUD::addClause('where', 'status', '!=', 'approved');
+        CRUD::addClause('whereIn', 'status', ['draft', 'rejected']);
 
         CRUD::addColumn(['name' => 'title', 'label' => 'Event Title']);
         CRUD::addColumn(['name' => 'createdBy.name', 'label' => 'Created By']);
@@ -75,50 +75,7 @@ class EventSubmissionCrudController extends CrudController
      */
     protected function setupCreateOperation()
     {
-        CRUD::setValidation(EventSubmissionRequest::class);
-        CRUD::setHeading('Submit Event');
-        CRUD::setSubheading('Fill in event details & submit for approval');
-        
-        CRUD::field('title')
-        ->type('text')
-        ->label('Event Title')
-        ->attributes(['required' => 'required']);
 
-        CRUD::field('description')
-        ->type('textarea')
-        ->label('Description');
-
-        CRUD::field('start_date')
-        ->type('date')
-        ->label('Start Date')
-        ->attributes(['required' => 'required']);
-
-        CRUD::field('end_date')
-        ->type('date')
-        ->label('End Date')
-        ->attributes(['required' => 'required']);
-
-        CRUD::field('max_participants')
-        ->type('number')
-        ->label('Maximum Participants')
-        ->attributes(['min' => 1, 'required' => 'required']);
-
-        CRUD::field('cost')
-        ->type('number')
-        ->label('Cost (RM)')
-        ->prefix('RM ')
-        ->attributes(['min' => 0, 'step' => '0.01']);
-
-        if (backpack_user() && backpack_user()->can('approve events')) {
-            CRUD::addField([
-                'name' => 'status',
-                'label' => 'Status',
-                'type' => 'select_from_array',
-                'options' => Event::getStatuses(),
-                'allows_null' => false, // Ensures a selection is made
-                'default' => 'draft', // Default to Draft
-            ]);
-        }
     }
 
     /**
@@ -147,4 +104,9 @@ class EventSubmissionCrudController extends CrudController
             ]);
         }
     }
+
+    public function create()
+{
+    return redirect(backpack_url('event/create'));
+}
 }

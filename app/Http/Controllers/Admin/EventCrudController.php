@@ -95,7 +95,7 @@ class EventCrudController extends CrudController
             'escaped' => false, // Allows HTML rendering
         ]);
 
-        CRUD::addButtonFromModelFunction('line', 'submit_for_approval', 'submitButton', 'end');
+        // CRUD::addButtonFromModelFunction('line', 'submit_for_approval', 'submitButton', 'end');
     }
 
     /**

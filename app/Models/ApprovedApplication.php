@@ -6,7 +6,7 @@ use Backpack\CRUD\app\Models\Traits\CrudTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class EventApproval extends Model
+class ApprovedApplication extends Application
 {
     use CrudTrait;
     use HasFactory;
@@ -17,7 +17,7 @@ class EventApproval extends Model
     |--------------------------------------------------------------------------
     */
 
-    protected $table = 'event_approvals';
+    protected $table = 'applications';
     // protected $primaryKey = 'id';
     // public $timestamps = false;
     protected $guarded = ['id'];

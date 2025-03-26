@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Event;
 use Prologue\Alerts\Facades\Alert;
-use App\Http\Requests\EventApprovalRequest;
+use App\Http\Requests\SubmittedEventRequest;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
 
@@ -13,7 +13,7 @@ use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
  * @package App\Http\Controllers\Admin
  * @property-read \Backpack\CRUD\app\Library\CrudPanel\CrudPanel $crud
  */
-class EventApprovalCrudController extends CrudController
+class SubmittedEventCrudController extends CrudController
 {
     use \Backpack\CRUD\app\Http\Controllers\Operations\ListOperation;
     use \Backpack\CRUD\app\Http\Controllers\Operations\CreateOperation;
@@ -29,13 +29,14 @@ class EventApprovalCrudController extends CrudController
     public function setup()
     {
         CRUD::setModel(Event::class);
-        CRUD::setRoute(config('backpack.base.route_prefix') . '/event-approval');
-        CRUD::setEntityNameStrings('event approval', 'event approvals');
+        CRUD::setRoute(backpack_url('submitted-event'));
+        CRUD::setEntityNameStrings('Submitted Event', 'Submitted Events');
+        CRUD::setHeading('Submitted Events');
 
         // Only Office Admins can access this
-        if (!backpack_user()->can('approve events')) {
-            abort(403);
-        }
+        // if (!backpack_user()->can('approve events')) {
+        //     abort(403);
+        // }
     }
 
     /**
@@ -76,8 +77,11 @@ class EventApprovalCrudController extends CrudController
         // Show only events that are "submitted"
         $this->crud->addClause('where', 'status', 'submitted');
 
-        CRUD::addButtonFromModelFunction('line', 'reject', 'rejectButton', 'end');
-        CRUD::addButtonFromModelFunction('line', 'approve', 'approveButton', 'end');
+        if (backpack_user()->can('approve events')) {
+            CRUD::addButtonFromModelFunction('line', 'reject', 'rejectButton', 'end');
+            CRUD::addButtonFromModelFunction('line', 'approve', 'approveButton', 'end');
+        }
+
         if (!backpack_user()->hasRole('Superadmin')) {
             CRUD::removeButton('update');
             CRUD::removeButton('delete');
@@ -92,7 +96,7 @@ class EventApprovalCrudController extends CrudController
      */
     protected function setupCreateOperation()
     {
-        CRUD::setValidation(EventApprovalRequest::class);
+        CRUD::setValidation(SubmittedEventRequest::class);
         CRUD::setFromDb(); // set fields from db columns.
 
         /**
@@ -134,7 +138,7 @@ class EventApprovalCrudController extends CrudController
 
     protected function setupShowOperation()
     {
-        CRUD::setValidation(EventApprovalRequest::class);
+        CRUD::setValidation(SubmittedEventRequest::class);
         CRUD::addColumn(['name' => 'title', 'label' => 'Event Title']);
         CRUD::addColumn(['name' => 'createdBy.name', 'label' => 'Created By']);
         CRUD::addColumn(['name' => 'location', 'label' => 'Location']);
