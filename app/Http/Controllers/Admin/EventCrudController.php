@@ -31,6 +31,8 @@ class EventCrudController extends CrudController
         CRUD::setModel(Event::class);
         CRUD::setRoute($routePrefix . '/event');
         CRUD::setEntityNameStrings('event', 'events');
+
+        CRUD::addClause('where', 'status', '!=', 'completed');
     }
 
     /**
@@ -77,15 +79,15 @@ class EventCrudController extends CrudController
             'type' => 'date',
         ]);
 
-        CRUD::addColumn([
-            'name' => 'applications_count',
-            'label' => 'Applicants',
-            'type' => 'number',
-            'default' => 0,
-            'wrapper' => [
-                'class' => 'd-flex justify-content-end pe-5', // Align text to the right
-            ],
-        ]);
+        // CRUD::addColumn([
+        //     'name' => 'applications_count',
+        //     'label' => 'Applicants',
+        //     'type' => 'number',
+        //     'default' => 0,
+        //     'wrapper' => [
+        //         'class' => 'd-flex justify-content-end pe-5', // Align text to the right
+        //     ],
+        // ]);
 
         CRUD::addColumn([
             'name' => 'status',
@@ -94,6 +96,13 @@ class EventCrudController extends CrudController
             'value' => fn($entry) => $entry->getStatusBadge(),
             'escaped' => false, // Allows HTML rendering
         ]);
+
+        // if (!backpack_user()->hasRole('Superadmin')) {
+            // Remove all default action buttons
+            CRUD::removeButton('update');
+            CRUD::removeButton('delete');
+            // CRUD::removeButton('show');
+        // }
 
         // CRUD::addButtonFromModelFunction('line', 'submit_for_approval', 'submitButton', 'end');
     }
@@ -163,6 +172,7 @@ class EventCrudController extends CrudController
     protected function setupUpdateOperation()
     {
         $this->setupCreateOperation();
+        CRUD::setHeading('Edit Event');
 
         $event = $this->crud->getCurrentEntry();
 
@@ -180,4 +190,123 @@ class EventCrudController extends CrudController
             ]);
         }
     }
+
+    protected function setupShowOperation()
+    {
+        CRUD::removeButton('update');
+        CRUD::removeButton('delete');
+            // ----------- Details Tab -----------
+        CRUD::addColumn([
+            'name' => 'title',
+            'label' => 'Event Title',
+            'type' => 'text',
+            'tab' => 'Details',
+        ]);
+        CRUD::addColumn([
+            'name' => 'location',
+            'label' => 'Location',
+            'type' => 'text',
+            'tab' => 'Details',
+        ]);
+        CRUD::addColumn([
+            'name' => 'start_date',
+            'label' => 'Start Date',
+            'type' => 'date',
+            'tab' => 'Details',
+        ]);
+        CRUD::addColumn([
+            'name' => 'end_date',
+            'label' => 'End Date',
+            'type' => 'date',
+            'tab' => 'Details',
+        ]);
+        CRUD::addColumn([
+            'name' => 'cost',
+            'label' => 'Cost',
+            'type' => 'number',
+            'tab' => 'Details',
+        ]);
+
+        $event = $this->crud->getCurrentEntry();
+
+        CRUD::addColumn([
+            'name'  => 'approved_participants',
+            'label' => '',
+            'type'  => 'custom_html',
+            'tab'   => 'Participant List',
+            'value' => $this->getApprovedParticipantsHtml($event),
+        ]);  
+
+        CRUD::addColumn([
+            'name' => 'itinerary',
+            'label' => 'Itinerary',
+         'type' => 'custom_html',
+            'value' => function ($entry) {
+                return $entry->itinerary ?: '<em>No itinerary available.</em>';
+            },
+            'escaped' => false,
+            'tab' => 'Itinerary',
+        ]);
+
+        CRUD::addColumn([
+            'name' => 'checklist',
+            'label' => 'Item Checklist',
+            'type' => 'custom_html',
+            'value' => function ($entry) {
+                return $entry->checklist ?: '<em>No checklist provided.</em>';
+            },
+            'escaped' => false,
+            'tab' => 'Item Checklist',
+        ]);
+
+        CRUD::addColumn([
+            'name' => 'additional_info',
+            'label' => 'Additional Info',
+            'type' => 'custom_html',
+            'value' => function ($entry) {
+                return $entry->additional_info ?: '<em>No additional info.</em>';
+            },
+            'escaped' => false,
+            'tab' => 'Additional Information',
+        ]);
+    }
+
+    private function getApprovedParticipantsHtml($event)
+    {
+        $approvedParticipants = $event->approvedParticipants;
+    
+        $html = '<h5><strong>Participants</strong></h5>';
+    
+        if ($approvedParticipants->isEmpty()) {
+            $html .= '<p>No approved participants yet.</p>';
+        } else {
+            $html .= '
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Full Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                            </tr>
+                        </thead>
+                        <tbody>';
+            foreach ($approvedParticipants as $index => $participant) {
+                $html .= '
+                            <tr>
+                                <td>' . ($index + 1) . '</td>
+                                <td>' . e($participant->full_name) . '</td>
+                                <td>' . e($participant->email) . '</td>
+                                <td>' . e($participant->phone) . '</td>
+                            </tr>';
+            }
+            $html .= '
+                        </tbody>
+                    </table>
+                </div>';
+        }
+    
+        return $html;
+    }   
 }

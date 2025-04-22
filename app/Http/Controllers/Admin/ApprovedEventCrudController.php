@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Models\Event;
+use App\Models\Application;
 use App\Http\Requests\EventRequest;
 use App\Http\Requests\ApprovedEventRequest;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
@@ -12,7 +14,7 @@ use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
  * @package App\Http\Controllers\Admin
  * @property-read \Backpack\CRUD\app\Library\CrudPanel\CrudPanel $crud
  */
-class ApprovedEventCrudController extends CrudController
+class ApprovedEventCrudController extends EventCrudController
 {
     use \Backpack\CRUD\app\Http\Controllers\Operations\ListOperation;
     use \Backpack\CRUD\app\Http\Controllers\Operations\CreateOperation;
@@ -27,7 +29,7 @@ class ApprovedEventCrudController extends CrudController
      */
     public function setup()
     {
-        CRUD::setModel(\App\Models\Event::class);
+        CRUD::setModel(Event::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/approved-event');
         CRUD::setEntityNameStrings('approved event', 'approved events');
     }
@@ -40,7 +42,7 @@ class ApprovedEventCrudController extends CrudController
      */
     protected function setupListOperation()
     {
-        $this->crud->removeButton('create');
+        CRUD::removeButton('create');
 
         if (backpack_user()->hasRole('Event Leader')) {
             CRUD::addClause('where', 'created_by', backpack_user()->id);
@@ -49,10 +51,13 @@ class ApprovedEventCrudController extends CrudController
         // Only show approved events
         CRUD::addClause('where', 'status', 'approved');
 
-        CRUD::addColumn(['name' => 'title', 'label' => 'Event Title']);
-        CRUD::addColumn(['name' => 'createdBy.name', 'label' => 'Created By']);
-        CRUD::addColumn(['name' => 'start_date', 'label' => 'Start Date']);
-        CRUD::addColumn(['name' => 'end_date', 'label' => 'End Date']);
+        $user = backpack_user();
+        parent::setupListOperation();
+
+        if ($user->hasRole('Superadmin')) {
+            CRUD::addButton('line', 'update', 'view', 'crud::buttons.update');
+            CRUD::addButton('line', 'delete', 'view', 'crud::buttons.delete');
+            }
 
         CRUD::addColumn([
             'name' => 'dashboard_link',
@@ -94,36 +99,207 @@ class ApprovedEventCrudController extends CrudController
         CRUD::setHeading($this->crud->getCurrentEntry()->title ?? 'Edit Approved Event');
         CRUD::setSubheading('Details added here will be displayed on the Event Dashboard');
 
-        CRUD::field('title')->attributes(['disabled' => 'disabled'])->tab('Details');
-        CRUD::field('description')->attributes(['disabled' => 'disabled'])->tab('Details');
-        CRUD::field('location')->attributes(['disabled' => 'disabled'])->tab('Details');
-        CRUD::field('start_date')->wrapper(['class' => 'form-group col-md-3'])->attributes(['disabled' => 'disabled'])->tab('Details');
-        CRUD::field('end_date')->wrapper(['class' => 'form-group col-md-3'])->attributes(['disabled' => 'disabled'])->tab('Details');
-        CRUD::field('max_participants')->attributes(['disabled' => 'disabled'])->tab('Details');
-        CRUD::field('cost')->label('Cost (RM)')->attributes(['disabled' => 'disabled'])->tab('Details');
+        CRUD::field('title')
+        ->attributes(['readonly' => 'readonly'])
+        ->tab('Details');
+
+        CRUD::field('description')
+        ->attributes(['readonly' => 'readonly'])
+        ->tab('Details');
+
+        CRUD::field('location')
+        ->attributes(['readonly' => 'readonly'])
+        ->tab('Details');
+
+        CRUD::field('start_date')
+        ->wrapper(['class' => 'form-group col-md-3'])
+        ->attributes(['readonly' => 'readonly'])
+        ->tab('Details');
+
+        CRUD::field('end_date')
+        ->wrapper(['class' => 'form-group col-md-3'])
+        ->attributes(['readonly' => 'readonly'])
+        ->tab('Details');
+
+        CRUD::field('max_participants')
+        ->attributes(['readonly' => 'readonly'])
+        ->tab('Details');
+
+        CRUD::field('cost')
+        ->label('Cost (RM)')
+        ->attributes(['readonly' => 'readonly'])
+        ->tab('Details');
+
+        //Participant List Tab
+        $event = $this->crud->getCurrentEntry();
+
         CRUD::addField([
-            'name' => 'empty_tab_placeholder',
-            'type' => 'custom_html',
-            'value' => '',
-            'tab' => 'Places of Interest',
+            'name'  => 'approved_participants',
+            'type'  => 'custom_html',
+            'tab'   => 'Participant List',
+            'value' => $this->getApprovedParticipantsHtml($event),
         ]);
+
         CRUD::addField([
-            'name' => 'empty_tab_placeholder_2',
-            'type' => 'custom_html',
-            'value' => '',
+            'name' => 'itinerary',
+            'label' => 'Event Itinerary',
+            'type' => 'summernote',
+            'tab' => 'Itinerary',
+            'options' => [
+                'height' => 300,
+            ],
+        ]);
+
+        //Item Checklist Template for now, before PRO version
+
+        // CRUD::addField([
+        //     'name'  => 'checklist_item_1_name',
+        //     'label' => 'Item 1 Name',
+        //     'type'  => 'text',
+        //     'tab'   => 'Item Checklist',
+        //     'wrapperAttributes' => ['class' => 'form-group col-md-4'], // 4/12 width
+        // ]);
+        
+        // CRUD::addField([
+        //     'name'    => 'checklist_item_1_category',
+        //     'label'   => 'Item 1 Category',
+        //     'type'    => 'select_from_array',
+        //     'options' => ['Clothing' => 'Clothing', 'Gear' => 'Gear', 'Food' => 'Food', 'Misc' => 'Misc'],
+        //     'tab'     => 'Item Checklist',
+        //     'wrapperAttributes' => ['class' => 'form-group col-md-2'],
+        // ]);
+        
+        // CRUD::addField([
+        //     'name'   => 'checklist_item_1_image',
+        //     'label'  => 'Item 1 Image',
+        //     'type'   => 'upload',
+        //     'upload' => true,
+        //     'tab'    => 'Item Checklist',
+        //     'wrapperAttributes' => ['class' => 'form-group col-md-2'],
+        // ]);
+        
+        // CRUD::addField([
+        //     'name'  => 'checklist_item_1_quantity',
+        //     'label' => 'Item 1 Quantity',
+        //     'type'  => 'number',
+        //     'tab'   => 'Item Checklist',
+        //     'wrapperAttributes' => ['class' => 'form-group col-md-2'],
+        // ]);
+        
+        // CRUD::addField([
+        //     'name'    => 'checklist_item_1_status',
+        //     'label'   => 'Item 1 Status',
+        //     'type'    => 'select_from_array',
+        //     'options' => ['required' => 'Required', 'optional' => 'Optional'],
+        //     'tab'     => 'Item Checklist',
+        //     'wrapperAttributes' => ['class' => 'form-group col-md-2'],
+        // ]);
+        
+        
+        // Repeat for checklist_item_2, checklist_item_3, etc.
+        
+        
+        // CRUD::addField([
+        //     'name' => 'checklistItems', // relationship name
+        //     'label' => 'Item Checklist',
+        //     'type' => 'repeatable',
+        //     'fields' => [
+        //         [
+        //             'name'  => 'item_name',
+        //             'label' => 'Item Name',
+        //             'type'  => 'text',
+        //         ],
+        //         [
+        //             'name' => 'category',
+        //             'label' => 'Category',
+        //             'type' => 'select_from_array',
+        //             'options' => ['Clothing' => 'Clothing', 'Gear' => 'Gear', 'Food' => 'Food', 'Misc' => 'Misc'],
+        //         ],
+        //         [
+        //             'name'  => 'image',
+        //             'label' => 'Image',
+        //             'type'  => 'upload',
+        //             'upload' => true,
+        //         ],
+        //         [
+        //             'name' => 'quantity',
+        //             'label' => 'Quantity',
+        //             'type' => 'number',
+        //         ],
+        //         [
+        //             'name' => 'status',
+        //             'label' => 'Status',
+        //             'type' => 'select_from_array',
+        //             'options' => ['required' => 'Required', 'optional' => 'Optional'],
+        //         ],
+        //     ],
+        //     'new_item_label'  => 'Add Checklist Item',
+        //     'tab'             => 'Item Checklist',
+        // ]);
+
+        CRUD::addField([
+            'name' => 'checklist',
+            'label' => 'Item Checklist',
+            'type' => 'summernote',
             'tab' => 'Item Checklist',
+            'options' => [
+                'height' => 300,
+            ],
         ]);
+
         CRUD::addField([
-            'name' => 'empty_tab_placeholder_3',
-            'type' => 'custom_html',
-            'value' => '',
-            'tab' => 'Participants List',
-        ]);
-        CRUD::addField([
-            'name' => 'empty_tab_placeholder_4',
-            'type' => 'custom_html',
-            'value' => '',
+            'name' => 'additional_info',
+            'label' => 'Additional Information',
+            'type' => 'summernote',
             'tab' => 'Additional Information',
+            'options' => [
+                'height' => 300,
+            ],
         ]);
     }
+    
+    protected function setupShowOperation()
+    {
+        parent::setupShowOperation();
+    }
+
+    private function getApprovedParticipantsHtml($event)
+    {
+        $approvedParticipants = $event->approvedParticipants;
+    
+        $html = '<h5><strong>Participants</strong></h5>';
+    
+        if ($approvedParticipants->isEmpty()) {
+            $html .= '<p>No approved participants yet.</p>';
+        } else {
+            $html .= '
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Full Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                            </tr>
+                        </thead>
+                        <tbody>';
+            foreach ($approvedParticipants as $index => $participant) {
+                $html .= '
+                            <tr>
+                                <td>' . ($index + 1) . '</td>
+                                <td>' . e($participant->full_name) . '</td>
+                                <td>' . e($participant->email) . '</td>
+                                <td>' . e($participant->phone) . '</td>
+                            </tr>';
+            }
+            $html .= '
+                        </tbody>
+                    </table>
+                </div>';
+        }
+    
+        return $html;
+    }  
 }
+

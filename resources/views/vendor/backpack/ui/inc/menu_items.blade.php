@@ -11,6 +11,7 @@
     <x-backpack::menu-dropdown-item title="Submitted" icon="la la-check-circle" :link="backpack_url('submitted-event')" />
     {{-- @endif --}}
     <x-backpack::menu-dropdown-item title="Approved" icon="la la-calendar-check" :link="backpack_url('approved-event')" />
+    <x-backpack::menu-dropdown-item title="Completed" icon="la la-check-circle" :link="backpack_url('completed-event')" />
 </x-backpack::menu-dropdown>
 
 <x-backpack::menu-dropdown title="Applications" icon="las la-calendar" class="open">
@@ -18,6 +19,7 @@
     <x-backpack::menu-dropdown-item title="Pending" icon="la la-file-alt" :link="backpack_url('pending-application')" />
     <x-backpack::menu-dropdown-item title="Approved" icon="la la-file-alt" :link="backpack_url('approved-application')" />
     <x-backpack::menu-dropdown-item title="Confirmed" icon="la la-file-alt" :link="backpack_url('confirmed-application')" />
+    <x-backpack::menu-dropdown-item title="Completed" icon="la la-question" :link="backpack_url('completed-application')" />
     <x-backpack::menu-dropdown-item title="Rejected" icon="la la-file-alt" :link="backpack_url('rejected-application')" />
 </x-backpack::menu-dropdown>
 
@@ -26,4 +28,3 @@
 <x-backpack::menu-item title="Users" icon="la la-user" :link="backpack_url('user')" />
 <x-backpack::menu-item title="Roles" icon="la la-users-cog" :link="backpack_url('role')" />
 <x-backpack::menu-item title="Permissions" icon="la la-key" :link="backpack_url('permission')" />
-{{-- <x-backpack::menu-item title="Tags" icon="la la-tag" :link="backpack_url('tag')" /> --}}

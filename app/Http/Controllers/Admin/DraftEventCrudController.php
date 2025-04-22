@@ -11,7 +11,7 @@ use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
  * @package App\Http\Controllers\Admin
  * @property-read \Backpack\CRUD\app\Library\CrudPanel\CrudPanel $crud
  */
-class DraftEventCrudController extends CrudController
+class DraftEventCrudController extends EventCrudController
 {
     use \Backpack\CRUD\app\Http\Controllers\Operations\ListOperation;
     use \Backpack\CRUD\app\Http\Controllers\Operations\CreateOperation;
@@ -41,29 +41,21 @@ class DraftEventCrudController extends CrudController
      */
     protected function setupListOperation()
     {
+        $user = backpack_user();
+        parent::setupListOperation();
+        
         CRUD::setEntityNameStrings('Event', 'Events');
-        // $this->crud->removeButton('create');
-        // CRUD::setCreateButtonRoute('admin.event.create');
+        CRUD::addClause('whereIn', 'status', ['draft', 'rejected']);
 
         if (backpack_user()->hasRole('Event Leader')) {
             CRUD::addClause('where', 'created_by', backpack_user()->id);
         }
 
-        CRUD::addClause('whereIn', 'status', ['draft', 'rejected']);
-
-        CRUD::addColumn(['name' => 'title', 'label' => 'Event Title']);
-        CRUD::addColumn(['name' => 'createdBy.name', 'label' => 'Created By']);
-        CRUD::addColumn(['name' => 'start_date', 'label' => 'Start Date']);
-        CRUD::addColumn(['name' => 'end_date', 'label' => 'End Date']);
+        if ($user->hasRole('Superadmin')) {
+            CRUD::addButton('line', 'update', 'view', 'crud::buttons.update');
+            CRUD::addButton('line', 'delete', 'view', 'crud::buttons.delete');
+            }
         
-        CRUD::addColumn([
-            'name' => 'status',
-            'label' => 'Status',
-            'type' => 'custom_html',
-            'value' => fn($entry) => $entry->getStatusBadge(),
-            'escaped' => false, // Allows HTML rendering
-        ]);
-
         CRUD::addButtonFromModelFunction('line', 'submit_for_approval', 'submitButton', 'end');
     }
 
@@ -75,7 +67,7 @@ class DraftEventCrudController extends CrudController
      */
     protected function setupCreateOperation()
     {
-
+        parent::setupCreateOperation();
     }
 
     /**
@@ -87,6 +79,7 @@ class DraftEventCrudController extends CrudController
     protected function setupUpdateOperation()
     {
         $this->setupCreateOperation();
+        CRUD::setHeading('Edit Draft');
 
         $event = $this->crud->getCurrentEntry();
 

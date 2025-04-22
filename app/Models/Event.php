@@ -27,7 +27,7 @@ class Event extends Model
     protected $casts = [
         'cost' => 'decimal:2', // Ensure Laravel correctly casts to decimal
     ];
-    protected $fillable = ['title', 'location', 'description', 'start_date', 'end_date', 'max_participants', 'cost', 'status'];
+    protected $fillable = ['title', 'location', 'description', 'start_date', 'end_date', 'max_participants', 'cost', 'status', 'itinerary', 'checklist', 'additional_info',];
 
 
     /*
@@ -56,6 +56,7 @@ class Event extends Model
             // 'pending' => 'Pending Approval',
             'approved' => 'Approved',
             'rejected' => 'Rejected',
+            'completed' => 'Completed'
         ])->toArray();
     }
 
@@ -67,6 +68,7 @@ public function getStatusBadge()
         // 'pending' => 'warning', // Yellow
         'approved' => 'success',  // Green
         'rejected' => 'danger',   // Red
+        'completed' => 'dark'
     ];
 
     $badgeColor = $colors[$this->status] ?? 'dark'; // Default to dark if status is unknown
@@ -191,8 +193,19 @@ public function canSubmitForApproval()
 
     public function applications()
     {
-    return $this->hasMany(Application::class);
+        return $this->hasMany(Application::class);
     }
+
+    public function checklistItems()
+    {
+        return $this->hasMany(EventChecklist::class);
+    }
+
+    public function approvedParticipants()
+{
+    return $this->hasMany(Application::class, 'event_id')
+                ->where('status', 'approved');
+}
     /*
     |--------------------------------------------------------------------------
     | SCOPES

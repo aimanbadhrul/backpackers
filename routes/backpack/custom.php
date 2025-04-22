@@ -30,6 +30,8 @@ Route::group([
     Route::crud('approved-application', 'ApprovedApplicationCrudController');
     Route::crud('confirmed-application', 'ConfirmedApplicationCrudController');
     Route::crud('rejected-application', 'RejectedApplicationCrudController');
+    Route::crud('completed-event', 'CompletedEventCrudController');
+    Route::crud('completed-application', 'CompletedApplicationCrudController');
 }); // this should be the absolute last line of this file
 
 /**

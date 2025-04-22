@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Requests\PendingApplicationRequest;
+use App\Models\Event;
 use App\Models\Application;
+use App\Http\Requests\PendingApplicationRequest;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
 
@@ -40,8 +41,28 @@ class PendingApplicationCrudController extends ApplicationCrudController
      */
     protected function setupListOperation()
     {
-        parent::setupListOperation();
+        $user = backpack_user();
         CRUD::addClause('where', 'status', 'pending');
+
+        if ($user->hasRole('Event Leader')) {
+                $eventIds = Event::where('created_by', $user->id)->pluck('id');
+                $this->crud->addClause('whereIn', 'event_id', $eventIds);
+        }
+        
+        parent::setupListOperation();
+
+        CRUD::removeButton('create');
+        if ($user->hasRole('Superadmin')) {
+        CRUD::addButton('line', 'update', 'view', 'crud::buttons.update');
+        CRUD::addButton('line', 'delete', 'view', 'crud::buttons.delete');
+        }
+        // CRUD::removeColumn('approval_date');
+
+        if ($user->hasRole('Event Leader') || $user->hasRole('Superadmin')) {
+            CRUD::addButtonFromModelFunction('line', 'reject', 'rejectButton', 'end');
+            CRUD::addButtonFromModelFunction('line', 'approve', 'approveButton', 'end');
+            }
+
     }
 
     /**
@@ -69,6 +90,18 @@ class PendingApplicationCrudController extends ApplicationCrudController
      */
     protected function setupUpdateOperation()
     {
-        $this->setupCreateOperation();
+        parent::setupCreateOperation();
+    }
+
+    protected function setupShowOperation()
+    {
+        parent::setupShowOperation();
+        CRUD::removeButton('update'); // Remove Edit button
+        CRUD::removeButton('delete'); // Remove Delete button
+
+        
+            CRUD::addButtonFromModelFunction('line', 'reject', 'rejectButtonShow', 'end');
+            CRUD::addButtonFromModelFunction('line', 'approve', 'approveButtonShow', 'beginning');
+        
     }
 }

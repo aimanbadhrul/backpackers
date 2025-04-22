@@ -40,8 +40,13 @@ class ApprovedApplicationCrudController extends ApplicationCrudController
      */
     protected function setupListOperation()
     {
+        CRUD::removeButton('create');
         parent::setupListOperation();
         CRUD::addClause('where', 'status', 'approved');
+        CRUD::addButton('line', 'update', 'view', 'crud::buttons.update');
+        CRUD::addButton('line', 'delete', 'view', 'crud::buttons.delete');
+
+        CRUD::addButtonFromModelFunction('line', 'confirm', 'confirmButton', 'end');
     }
 
     /**
@@ -54,11 +59,6 @@ class ApprovedApplicationCrudController extends ApplicationCrudController
     {
         CRUD::setValidation(ApprovedApplicationRequest::class);
         CRUD::setFromDb(); // set fields from db columns.
-
-        /**
-         * Fields can be defined using the fluent syntax:
-         * - CRUD::field('price')->type('number');
-         */
     }
 
     /**
@@ -69,6 +69,11 @@ class ApprovedApplicationCrudController extends ApplicationCrudController
      */
     protected function setupUpdateOperation()
     {
-        $this->setupCreateOperation();
+        parent::setupCreateOperation();
+    }
+
+    protected function setupShowOperation()
+    {
+        parent::setupShowOperation();
     }
 }

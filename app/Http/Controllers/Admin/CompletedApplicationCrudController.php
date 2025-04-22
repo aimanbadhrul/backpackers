@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Requests\RejectedApplicationRequest;
 use App\Models\Application;
+use App\Http\Requests\CompletedApplicationRequest;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
 
 /**
- * Class RejectedApplicationCrudController
+ * Class CompletedApplicationCrudController
  * @package App\Http\Controllers\Admin
  * @property-read \Backpack\CRUD\app\Library\CrudPanel\CrudPanel $crud
  */
-class RejectedApplicationCrudController extends ApplicationCrudController
+class CompletedApplicationCrudController extends ApplicationCrudController
 {
     use \Backpack\CRUD\app\Http\Controllers\Operations\ListOperation;
     use \Backpack\CRUD\app\Http\Controllers\Operations\CreateOperation;
@@ -27,9 +27,11 @@ class RejectedApplicationCrudController extends ApplicationCrudController
      */
     public function setup()
     {
-        CRUD::setModel(\App\Models\RejectedApplication::class);
-        CRUD::setRoute(config('backpack.base.route_prefix') . '/rejected-application');
-        CRUD::setEntityNameStrings('rejected application', 'rejected applications');
+        CRUD::setModel(Application::class);
+        CRUD::setRoute(config('backpack.base.route_prefix') . '/completed-application');
+        CRUD::setEntityNameStrings('Completed Application', 'Completed Applications');
+
+
     }
 
     /**
@@ -41,42 +43,26 @@ class RejectedApplicationCrudController extends ApplicationCrudController
     protected function setupListOperation()
     {
         $user = backpack_user();
-        parent::setupListOperation();
-        
-        CRUD::removeButton('create');
-        CRUD::addClause('where', 'status', 'rejected');
+        CRUD::addClause('where', 'status', 'completed');
 
+        parent::setupListOperation();
+
+        CRUD::removeButton('create');
         if ($user->hasRole('Superadmin')) {
             CRUD::addButton('line', 'update', 'view', 'crud::buttons.update');
             CRUD::addButton('line', 'delete', 'view', 'crud::buttons.delete');
-            }
+        }
     }
-
-    /**
-     * Define what happens when the Create operation is loaded.
-     * 
-     * @see https://backpackforlaravel.com/docs/crud-operation-create
-     * @return void
-     */
     protected function setupCreateOperation()
     {
-        CRUD::setValidation(RejectedApplicationRequest::class);
-        CRUD::setFromDb(); // set fields from db columns.
-
-        /**
-         * Fields can be defined using the fluent syntax:
-         * - CRUD::field('price')->type('number');
-         */
+        abort(403);
     }
-
-    /**
-     * Define what happens when the Update operation is loaded.
-     * 
-     * @see https://backpackforlaravel.com/docs/crud-operation-update
-     * @return void
-     */
     protected function setupUpdateOperation()
     {
-        parent::setupCreateOperation();
+        abort(403);
+    }
+    protected function setupShowOperation()
+    {
+        parent::setupShowOperation();
     }
 }

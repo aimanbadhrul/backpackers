@@ -1,4 +1,6 @@
 <div>
     <h1>Welcome to Your Dashboard</h1>
-    <p>This is a placeholder page.</p>
+    <a href="https://backpackers.test/admin/dashboard" class="button-link">
+        <button>Get Started</button>
+    </a>
 </div>

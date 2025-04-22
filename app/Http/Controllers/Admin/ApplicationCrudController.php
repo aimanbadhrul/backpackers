@@ -45,14 +45,16 @@ class ApplicationCrudController extends CrudController
     protected function setupListOperation()
     {
         $user = backpack_user();
+        CRUD::removeButton('update');
+        CRUD::removeButton('delete');
+
+        // CRUD::addClause('whereNotIn', 'status', ['completed']);
 
         if ($user->hasRole('Event Leader')) {
                 $eventIds = Event::where('created_by', $user->id)->pluck('id');
                 $this->crud->addClause('whereIn', 'event_id', $eventIds);
         }
-        
 
-        // CRUD::setFromDb(); // set columns from db columns.
         CRUD::addColumn([
             'label' => "Event",
             'type' => "select",
@@ -61,48 +63,64 @@ class ApplicationCrudController extends CrudController
             'attribute' => 'title',
             'model' => Event::class,
         ]);
+
+        // CRUD::addColumn([
+        //     'label' => "Applicant Name",
+        //     'type' => "select",
+        //     'name' => 'user_id', // The foreign key column in applications table
+        //     'entity' => 'user', // The relationship method in Application model
+        //     'attribute' => 'name', // The column to display in the table
+        //     'model' => User::class,
+        // ]);    
+        
         CRUD::addColumn([
-            'label' => "Applicant Name",
-            'type' => "select",
-            'name' => 'user_id', // The foreign key column in applications table
-            'entity' => 'user', // The relationship method in Application model
-            'attribute' => 'name', // The column to display in the table
-            'model' => User::class,
-        ]);                
+            'name' => 'full_name',
+            'label' => 'Applicant Name',
+            'type' => 'text'
+        ]);
+        
         CRUD::addColumn([
             'name' => 'created_at',
             'label' => 'Submitted At',
-            'type' => 'datetime', // Formats automatically
-            'format' => 'MMM DD, YYYY HH:mm A', // Example: Feb 26, 2025 10:30 AM
+            'type' => 'datetime'
         ]);
+
         CRUD::addColumn([
             'name' => 'status',
             'label' => 'Status',
             'type' => 'select_from_array',
-            'options' => [
-                'pending'  => 'Pending',
-                'approved' => 'Approved',
-                'rejected' => 'Rejected',
-            ],
+            'options' => Application::getStatusOptions(),
             'wrapper' => [
                 'element' => 'span',
                 'class' => function ($crud, $column, $entry, $related_key) {
                     $colors = [
                         'pending'  => 'badge bg-warning',  // Yellow
                         'approved' => 'badge bg-success',  // Green
+                        'confirmed' => 'badge bg-primary',  // Blue
                         'rejected' => 'badge bg-danger',   // Red
+                        'completed' => 'badge bg-dark',  // Dark
                     ];
                     return $colors[$entry->status] ?? 'badge bg-secondary';
                 },
             ],
         ]);
-        CRUD::column('approval_date')->label('Approved At');
-        CRUD::column('payment_status')->label('Payment');
+
+        CRUD::addColumn([
+            'name' => 'approval_date',
+            'label' => 'Approved At',
+            'type' => 'datetime'
+        ]);
+
+        // CRUD::addColumn([
+        //     'name' => 'payment_status',
+        //     'label' => 'Payment Status',
+        //     'type' => 'text'
+        // ]);
         
-        if ($user->hasRole('Event Leader') || $user->hasRole('Superadmin')) {
-        CRUD::addButtonFromModelFunction('line', 'reject', 'rejectButton', 'end');
-        CRUD::addButtonFromModelFunction('line', 'approve', 'approveButton', 'end');
-        }
+        // if ($user->hasRole('Event Leader') || $user->hasRole('Superadmin')) {
+        // CRUD::addButtonFromModelFunction('line', 'reject', 'rejectButton', 'end');
+        // CRUD::addButtonFromModelFunction('line', 'approve', 'approveButton', 'end');
+        // }
     }
 
     /**
@@ -184,27 +202,14 @@ class ApplicationCrudController extends CrudController
             'tab' => 'Details'
         ]);
 
+    if (backpack_user()->can('approve applications')) {
         CRUD::addField([
-            'name' => 'empty_tab_placeholder',
-            'type' => 'custom_html',
-            'value' => '',
-            'tab' => 'Payment Details',
-        ]);
-
-        CRUD::addField([
-            'name'    => 'status',
-            'label'   => 'Status',
-            'type'    => 'select_from_array',
-            'options' => Application::getStatusOptions(), // Fetch dynamically
-            'tab'     => 'Status'
-        ]);
-    
-        CRUD::addField([
-            'name' => 'rejection_reason',
-            'label' => 'Rejection Reason',
-            'type' => 'textarea',
-            'hint' => 'Required if rejected.',
-            'tab' => 'Status'
+            'name' => 'payment_receipt',
+            'label' => 'Payment Receipt',
+            'type' => 'upload',
+            'upload' => true,
+            'disk' => 'public',
+            'tab' => 'Approval'
         ]);
     
         CRUD::addField([
@@ -214,31 +219,173 @@ class ApplicationCrudController extends CrudController
             'options' => ['pending' => 'Pending', 'paid' => 'Paid', 'waived' => 'Waived'],
             'allows_null' => false,
             'default' => 'pending',
-            'tab' => 'Status'
+            'tab' => 'Approval'
         ]);
 
         CRUD::addField([
-            'name' => 'group',
-            'label' => 'Group',
-            'type' => 'text',
-            'tab' => 'Status'
+            'name'    => 'status',
+            'label'   => 'Status',
+            'type'    => 'select_from_array',
+            'options' => Application::getStatusOptions(), // Fetch dynamically
+            'tab'     => 'Approval'
         ]);
-        /**
-         * Fields can be defined using the fluent syntax:
-         * - CRUD::field('price')->type('number');
-         */
+    }
     }
 
-    /**
-     * Define what happens when the Update operation is loaded.
-     * 
-     * @see https://backpackforlaravel.com/docs/crud-operation-update
-     * @return void
-     */
     protected function setupUpdateOperation()
     {
         $this->setupCreateOperation();
     }
+
+    protected function setupShowOperation()
+    {
+        $entry = CRUD::getCurrentEntry();
+        $event = $entry->event;
+
+        // CRUD::removeButton('update');
+        // CRUD::removeButton('delete');
+
+        // Tab: Application Details
+        CRUD::addColumn([
+            'name' => 'event_title',
+            'label' => 'Event',
+            'type' => 'custom_html',
+            'tab' => 'Details',
+            'value' => e($event->title)
+        ]);
+
+        CRUD::addColumn([
+            'name' => 'full_name',
+            'label' => 'Full Name',
+            'type' => 'custom_html',
+            'tab' => 'Details',
+            'value' => e($entry->full_name)
+        ]);
+
+        CRUD::addColumn([
+            'name' => 'email',
+            'label' => 'Email',
+            'type' => 'custom_html',
+            'tab' => 'Details',
+            'value' => e($entry->email)
+        ]);
+
+        CRUD::addColumn([
+            'name' => 'phone',
+            'label' => 'Phone No',
+            'type' => 'custom_html',
+            'tab' => 'Details',
+            'value' => e($entry->phone)
+        ]);
+
+        CRUD::addColumn([
+            'name' => 'special_requests',
+            'label' => 'Special Requests',
+            'type' => 'custom_html',
+            'tab' => 'Details',
+            'value' => e($entry->special_requests)
+        ]);
+
+        CRUD::addColumn([
+            'name' => 'submission_date',
+            'label' => 'Submission Date',
+            'type' => 'custom_html',
+            'tab' => 'Details',
+            'value' => e($entry->submission_date)
+        ]);
+
+        CRUD::addColumn([
+            'name' => 'approval_date',
+            'label' => 'Approval Date',
+            'type' => 'custom_html',
+            'tab' => 'Details',
+            'value' => e($entry->approval_date)
+        ]);
+
+        CRUD::addColumn([
+            'name' => 'payment_status',
+            'label' => 'Payment Status',
+            'type' => 'custom_html',
+            'tab' => 'Details',
+            'value' => e($entry->payment_status)
+        ]);
+
+        // Tab: Emergency Contact
+        CRUD::addColumn([
+            'name' => 'emergency_name',
+            'label' => 'Contact Name',
+            'type' => 'custom_html',
+            'tab' => 'Emergency Contact',
+            'value' => e($entry->emergency_contact_name)
+        ]);
+
+        CRUD::addColumn([
+            'name' => 'emergency_no',
+            'label' => 'Contact No',
+            'type' => 'custom_html',
+            'tab' => 'Emergency Contact',
+            'value' => e($entry->emergency_contact_phone)
+        ]);
+
+        // Tab: Event Details
+        CRUD::addColumn([
+            'name' => 'event_title_2',
+            'label' => 'Event Title',
+            'type' => 'custom_html',
+            'tab' => 'Event Info',
+            'value' => e($event->title)
+        ]);
+
+        CRUD::addColumn([
+            'name' => 'event_location',
+            'label' => 'Location',
+            'type' => 'custom_html',
+            'tab' => 'Event Info',
+            'value' => e($event->location)
+        ]);
+
+        CRUD::addColumn([
+            'name' => 'event_start_date',
+            'label' => 'Start Date',
+            'type' => 'custom_html',
+            'tab' => 'Event Info',
+            'value' => e($event->start_date)
+        ]);
+
+        CRUD::addColumn([
+            'name' => 'event_end_date',
+            'label' => 'End Date',
+            'type' => 'custom_html',
+            'tab' => 'Event Info',
+            'value' => e($event->end_date)
+        ]);
+
+        CRUD::addColumn([
+            'name' => 'event_status',
+            'label' => 'Status',
+            'type' => 'custom_html',
+            'tab' => 'Event Info',
+            'value' => e($event->status)
+        ]);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     public function approve($id)
     {
@@ -255,7 +402,9 @@ class ApplicationCrudController extends CrudController
         }
 
         $application->update(['status' => 'approved']);
-    
+        $application->approval_date = now();
+        $application->save();
+
         Alert::success('Application approved!')->flash();
         return redirect()->back();
     }
@@ -286,25 +435,5 @@ class ApplicationCrudController extends CrudController
     Alert::success('Application successfully confirmed!')->flash();
     return redirect()->back();
 }
-    
-    protected function setupShowOperation()
-    {
-        CRUD::column('event_id')->label('Event');
-        CRUD::column('user_id')->label('User');
-        CRUD::column('full_name')->label('Full Name');
-        CRUD::column('email')->label('Email');
-        CRUD::column('phone')->label('Phone');
-        CRUD::column('emergency_contact_name')->label('Emergency Contact Name');
-        CRUD::column('emergency_contact_phone')->label('Emergency Contact Phone');
-        CRUD::column('submission_date')->label('Submission Date');
-        CRUD::column('approval_date')->label('Approval Date');
-        CRUD::column('status')->label('Status');
-        CRUD::column('rejection_reason')->label('Rejection Reason');
-        CRUD::column('payment_status')->label('Payment Status');
-        CRUD::column('group')->label('Group');
-        CRUD::column('special_requests')->label('Special Requests');
-        CRUD::column('notes')->label('Notes');
-    }
-
 
 }

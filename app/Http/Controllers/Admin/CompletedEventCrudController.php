@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Requests\RejectedApplicationRequest;
-use App\Models\Application;
+use App\Models\Event;
+use App\Http\Requests\CompletedEventRequest;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
 
 /**
- * Class RejectedApplicationCrudController
+ * Class CompletedEventCrudController
  * @package App\Http\Controllers\Admin
  * @property-read \Backpack\CRUD\app\Library\CrudPanel\CrudPanel $crud
  */
-class RejectedApplicationCrudController extends ApplicationCrudController
+class CompletedEventCrudController extends EventCrudController
 {
     use \Backpack\CRUD\app\Http\Controllers\Operations\ListOperation;
     use \Backpack\CRUD\app\Http\Controllers\Operations\CreateOperation;
@@ -27,9 +27,11 @@ class RejectedApplicationCrudController extends ApplicationCrudController
      */
     public function setup()
     {
-        CRUD::setModel(\App\Models\RejectedApplication::class);
-        CRUD::setRoute(config('backpack.base.route_prefix') . '/rejected-application');
-        CRUD::setEntityNameStrings('rejected application', 'rejected applications');
+        CRUD::setModel(Event::class);
+        CRUD::setRoute(config('backpack.base.route_prefix') . '/completed-event');
+        CRUD::setEntityNameStrings('Completed Event', 'Completed Events');
+
+        CRUD::addClause('where', 'status', 'completed');
     }
 
     /**
@@ -40,16 +42,12 @@ class RejectedApplicationCrudController extends ApplicationCrudController
      */
     protected function setupListOperation()
     {
-        $user = backpack_user();
+        // Use same columns as EventCrud
         parent::setupListOperation();
-        
-        CRUD::removeButton('create');
-        CRUD::addClause('where', 'status', 'rejected');
 
-        if ($user->hasRole('Superadmin')) {
-            CRUD::addButton('line', 'update', 'view', 'crud::buttons.update');
-            CRUD::addButton('line', 'delete', 'view', 'crud::buttons.delete');
-            }
+        CRUD::removeButton('create');
+        CRUD::removeButton('delete');
+        CRUD::removeButton('update');
     }
 
     /**
@@ -60,13 +58,7 @@ class RejectedApplicationCrudController extends ApplicationCrudController
      */
     protected function setupCreateOperation()
     {
-        CRUD::setValidation(RejectedApplicationRequest::class);
-        CRUD::setFromDb(); // set fields from db columns.
-
-        /**
-         * Fields can be defined using the fluent syntax:
-         * - CRUD::field('price')->type('number');
-         */
+        abort(403); // Disallow creation
     }
 
     /**
@@ -77,6 +69,6 @@ class RejectedApplicationCrudController extends ApplicationCrudController
      */
     protected function setupUpdateOperation()
     {
-        parent::setupCreateOperation();
+        abort(403); // Disallow creation
     }
 }

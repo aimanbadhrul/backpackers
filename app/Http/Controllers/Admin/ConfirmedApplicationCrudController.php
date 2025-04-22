@@ -40,8 +40,16 @@ class ConfirmedApplicationCrudController extends ApplicationCrudController
      */
     protected function setupListOperation()
     {
+        $user = backpack_user();
         parent::setupListOperation();
+
+        CRUD::removeButton('create');
         CRUD::addClause('where', 'status', 'confirmed');
+
+        if ($user->hasRole('Superadmin')) {
+            CRUD::addButton('line', 'update', 'view', 'crud::buttons.update');
+            CRUD::addButton('line', 'delete', 'view', 'crud::buttons.delete');
+            }
     }
 
     /**
@@ -69,6 +77,6 @@ class ConfirmedApplicationCrudController extends ApplicationCrudController
      */
     protected function setupUpdateOperation()
     {
-        $this->setupCreateOperation();
+        parent::setupCreateOperation();
     }
 }

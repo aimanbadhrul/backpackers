@@ -15,7 +15,7 @@ use App\Http\Controllers\Admin\EventApprovalCrudController;
 use App\Http\Controllers\Admin\SubmittedEventCrudController;
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('home');
 });
 Route::get('/home', function () {
     return view('home');
@@ -42,6 +42,9 @@ Route::middleware(['admin'])->group(function () {
 //Application Process
 Route::get('application/{id}/approve', [ApplicationCrudController::class, 'approve'])->name('admin.application.approve');
 Route::get('application/{id}/reject', [ApplicationCrudController::class, 'reject'])->name('admin.application.reject');
+Route::get('application/{application}/confirm', [ApplicationCrudController::class, 'confirm'])->name('admin.application.confirm');
+
+
 
 //Event Approval Process
 Route::get('submitted-event/{id}/approve', [SubmittedEventCrudController::class, 'approve'])->name('admin.submitted-event.approve');
