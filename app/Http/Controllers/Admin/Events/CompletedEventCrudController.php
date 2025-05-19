@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Admin\Events;
 
 use App\Models\Event;
 use App\Http\Requests\CompletedEventRequest;

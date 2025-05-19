@@ -37,10 +37,10 @@ class PermissionSeeder extends Seeder
         }
 
         // Assign permissions to roles
-        $superadmin = Role::firstOrCreate(['name' => 'Super Admin']);
+        $superadmin = Role::firstOrCreate(['name' => 'Superadmin']);
         $officeAdmin = Role::firstOrCreate(['name' => 'Office Admin']);
         $eventLeader = Role::firstOrCreate(['name' => 'Event Leader']);
-        $participant = Role::firstOrCreate(['name' => 'Participant']);
+        $user = Role::firstOrCreate(['name' => 'User']);
 
         // Superadmin gets all permissions
         $superadmin->syncPermissions($permissions);
@@ -48,18 +48,17 @@ class PermissionSeeder extends Seeder
         // Office Admin
         $officeAdmin->syncPermissions([
             'approve events',
-            'view all events',
-            'view applications',
-            'approve applications',
-            'reject applications',
+            'manage events',
+            'manage users',
+            'manage applications',
+            'view all applications',
         ]);
 
         // Event Leader
         $eventLeader->syncPermissions([
-            'create events',
-            'edit own events',
-            'submit events for approval',
-            'view all events',
+            'manage events',
+            'manage applications',
+            'approve applications'
         ]);
     }
 }

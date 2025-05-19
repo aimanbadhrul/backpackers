@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Admin\Applications;
 
 use App\Models\Application;
 use App\Http\Requests\CompletedApplicationRequest;
@@ -30,6 +30,7 @@ class CompletedApplicationCrudController extends ApplicationCrudController
         CRUD::setModel(Application::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/completed-application');
         CRUD::setEntityNameStrings('Completed Application', 'Completed Applications');
+        CRUD::addClause('where', 'status', 'completed');
 
 
     }
@@ -43,7 +44,6 @@ class CompletedApplicationCrudController extends ApplicationCrudController
     protected function setupListOperation()
     {
         $user = backpack_user();
-        CRUD::addClause('where', 'status', 'completed');
 
         parent::setupListOperation();
 

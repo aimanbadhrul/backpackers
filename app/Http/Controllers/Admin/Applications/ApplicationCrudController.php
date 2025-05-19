@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Admin\Applications;
 
 use App\Models\User;
 use App\Models\Event;
@@ -34,26 +34,25 @@ class ApplicationCrudController extends CrudController
         CRUD::setModel(Application::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/application');
         CRUD::setEntityNameStrings('Application', 'Applications');
-    }
 
-    /**
-     * Define what happens when the List operation is loaded.
-     * 
-     * @see  https://backpackforlaravel.com/docs/crud-operation-list-entries
-     * @return void
-     */
+        CRUD::addClause('where', 'status', '!=', 'completed');
+        
+        $user = backpack_user();
+        if (!$user->hasRole('Superadmin')) {
+            CRUD::denyAccess('delete');
+        }
+    }
     protected function setupListOperation()
     {
         $user = backpack_user();
-        CRUD::removeButton('update');
-        CRUD::removeButton('delete');
 
-        // CRUD::addClause('whereNotIn', 'status', ['completed']);
-
-        if ($user->hasRole('Event Leader')) {
-                $eventIds = Event::where('created_by', $user->id)->pluck('id');
-                $this->crud->addClause('whereIn', 'event_id', $eventIds);
-        }
+        if (!$user->can('view all applications')) {
+            $userId = $user->id;
+        
+            CRUD::addClause('where', function ($query) use ($userId) {
+                $query->whereIn('event_id', Event::where('created_by', $userId)->pluck('id'))->orWhere('user_id', $userId);;
+            });
+        }        
 
         CRUD::addColumn([
             'label' => "Event",
@@ -64,14 +63,14 @@ class ApplicationCrudController extends CrudController
             'model' => Event::class,
         ]);
 
-        // CRUD::addColumn([
-        //     'label' => "Applicant Name",
-        //     'type' => "select",
-        //     'name' => 'user_id', // The foreign key column in applications table
-        //     'entity' => 'user', // The relationship method in Application model
-        //     'attribute' => 'name', // The column to display in the table
-        //     'model' => User::class,
-        // ]);    
+        CRUD::addColumn([
+            'label' => "User",
+            'type' => "select",
+            'name' => 'user_id', // The foreign key column in applications table
+            'entity' => 'user', // The relationship method in Application model
+            'attribute' => 'name', // The column to display in the table
+            'model' => User::class,
+        ]);    
         
         CRUD::addColumn([
             'name' => 'full_name',
@@ -111,45 +110,38 @@ class ApplicationCrudController extends CrudController
             'type' => 'datetime'
         ]);
 
-        // CRUD::addColumn([
-        //     'name' => 'payment_status',
-        //     'label' => 'Payment Status',
-        //     'type' => 'text'
-        // ]);
-        
-        // if ($user->hasRole('Event Leader') || $user->hasRole('Superadmin')) {
-        // CRUD::addButtonFromModelFunction('line', 'reject', 'rejectButton', 'end');
-        // CRUD::addButtonFromModelFunction('line', 'approve', 'approveButton', 'end');
+        // if (!backpack_user()->hasRole('Superadmin')) {
+            // Remove all default action buttons
+            CRUD::removeButton('update');
+            CRUD::removeButton('delete');
+            // CRUD::removeButton('show');
         // }
     }
 
-    /**
-     * Define what happens when the Create operation is loaded.
-     * 
-     * @see https://backpackforlaravel.com/docs/crud-operation-create
-     * @return void
-     */
     protected function setupCreateOperation()
     {
+        $user = backpack_user();
         CRUD::setValidation(ApplicationRequest::class);
         
         CRUD::addField([
             'label'     => "Event",
             'type'      => 'select',
-            'name'      => 'event_id', // The foreign key column in the applications table
+            'name'      => 'event_id', // Foreign key in applications table
             'entity'    => 'event',
-            'attribute' => 'title', // The column to display in the dropdown
+            'attribute' => 'display_title',
             'model'     => Event::class,
-            'tab' => 'Details'
+            'tab'       => 'Details',
+            'options'   => fn($query) => $query->where('status', 'approved')->get(),
         ]);
-    
+        
         CRUD::addField([
-            'label' => "Applicant",
-            'type'  => 'select',
+            'label' => "User",
+            'type' => $user->hasRole('Superadmin') ? 'select' : 'hidden',
             'name'  => 'user_id',
             'entity' => 'user',
             'attribute' => 'name',
             'model' => User::class,
+            'default' => $user->id,
             'tab' => 'Details'
         ]);
 
@@ -202,17 +194,20 @@ class ApplicationCrudController extends CrudController
             'tab' => 'Details'
         ]);
 
-    if (backpack_user()->can('approve applications')) {
-        CRUD::addField([
+        if (
+            $user->hasRole('Superadmin') ||
+            (isset($this->crud->getCurrentEntry()->event) && $this->crud->getCurrentEntry()->event->created_by == $user->id)
+        ) {
+            CRUD::addField([
             'name' => 'payment_receipt',
             'label' => 'Payment Receipt',
             'type' => 'upload',
             'upload' => true,
             'disk' => 'public',
             'tab' => 'Approval'
-        ]);
+            ]);
     
-        CRUD::addField([
+            CRUD::addField([
             'name' => 'payment_status',
             'label' => 'Payment Status',
             'type' => 'select_from_array',
@@ -220,16 +215,17 @@ class ApplicationCrudController extends CrudController
             'allows_null' => false,
             'default' => 'pending',
             'tab' => 'Approval'
-        ]);
+            ]);
 
-        CRUD::addField([
+            CRUD::addField([
             'name'    => 'status',
             'label'   => 'Status',
             'type'    => 'select_from_array',
             'options' => Application::getStatusOptions(), // Fetch dynamically
-            'tab'     => 'Approval'
-        ]);
-    }
+            'tab'     => 'Approval',
+            'default' => 'pending'
+            ]);
+        }
     }
 
     protected function setupUpdateOperation()
@@ -241,9 +237,10 @@ class ApplicationCrudController extends CrudController
     {
         $entry = CRUD::getCurrentEntry();
         $event = $entry->event;
+        $user = backpack_user();
 
-        // CRUD::removeButton('update');
-        // CRUD::removeButton('delete');
+        CRUD::removeButton('update');
+        CRUD::removeButton('delete');
 
         // Tab: Application Details
         CRUD::addColumn([
@@ -252,6 +249,14 @@ class ApplicationCrudController extends CrudController
             'type' => 'custom_html',
             'tab' => 'Details',
             'value' => e($event->title)
+        ]);
+
+        CRUD::addColumn([
+            'name'  => 'user_id',
+            'label' => "User",
+            'type'  => 'custom_html',
+            'tab' => 'Details',
+            'value' => e($user->name),
         ]);
 
         CRUD::addColumn([
@@ -291,7 +296,7 @@ class ApplicationCrudController extends CrudController
             'label' => 'Submission Date',
             'type' => 'custom_html',
             'tab' => 'Details',
-            'value' => e($entry->submission_date)
+            'value' => e($entry->created_at->format('d M Y'))
         ]);
 
         CRUD::addColumn([
@@ -349,7 +354,7 @@ class ApplicationCrudController extends CrudController
             'label' => 'Start Date',
             'type' => 'custom_html',
             'tab' => 'Event Info',
-            'value' => e($event->start_date)
+            'value' => e($event->start_date->format('d M Y'))
         ]);
 
         CRUD::addColumn([
@@ -357,7 +362,7 @@ class ApplicationCrudController extends CrudController
             'label' => 'End Date',
             'type' => 'custom_html',
             'tab' => 'Event Info',
-            'value' => e($event->end_date)
+            'value' => e($event->end_date->format('d M Y'))
         ]);
 
         CRUD::addColumn([

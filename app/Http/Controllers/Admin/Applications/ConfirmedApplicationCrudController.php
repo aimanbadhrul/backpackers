@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Admin\Applications;
 
 use App\Http\Requests\ConfirmedApplicationRequest;
 use App\Models\Application;
@@ -30,6 +30,8 @@ class ConfirmedApplicationCrudController extends ApplicationCrudController
         CRUD::setModel(\App\Models\ConfirmedApplication::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/confirmed-application');
         CRUD::setEntityNameStrings('confirmed application', 'confirmed applications');
+
+        CRUD::addClause('where', 'status', 'confirmed');
     }
 
     /**
@@ -44,7 +46,6 @@ class ConfirmedApplicationCrudController extends ApplicationCrudController
         parent::setupListOperation();
 
         CRUD::removeButton('create');
-        CRUD::addClause('where', 'status', 'confirmed');
 
         if ($user->hasRole('Superadmin')) {
             CRUD::addButton('line', 'update', 'view', 'crud::buttons.update');

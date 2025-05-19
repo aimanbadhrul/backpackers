@@ -1,72 +1,79 @@
 <?php
 
-use App\Models\User;
 use App\Livewire\Dashboard;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use Lab404\Impersonate\Models\Impersonate;
+use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\ImpersonateController;
 use App\Http\Controllers\Admin\UserProfileController;
-use Backpack\CRUD\app\Http\Controllers\AdminController;
-use App\Http\Controllers\Admin\EventDashboardController;
-use App\Http\Controllers\Admin\ApplicationCrudController;
-use App\Http\Controllers\Admin\EventApprovalCrudController;
-use App\Http\Controllers\Admin\SubmittedEventCrudController;
+use App\Http\Controllers\Admin\Events\EventCrudController;
+use App\Http\Controllers\Admin\Events\EventDashboardController;
+use App\Http\Controllers\Admin\Events\SubmittedEventCrudController;
+use App\Http\Controllers\Admin\Applications\ApplicationCrudController;
 
-Route::get('/', function () {
-    return view('home');
-});
-Route::get('/home', function () {
-    return view('home');
-})->name('home');
-Route::get('/dashboard', Dashboard::class)->middleware('auth')->name('dashboard');
+// 🏠 PUBLIC ROUTES
+Route::get('/', fn () => view('home'))->name('home');
+Route::get('/home', fn () => view('home'));
 
-//Register / Login Process
+// 🧑‍💻 LIVEWIRE AUTH ROUTES (separate from Backpack)
 Route::get('/register', Register::class)->name('register');
 Route::get('/login', Login::class)->name('login');
 Route::post('/logout', function () {
-    Auth::logout();
+    Auth::guard('backpack')->logout(); // logout Backpack user
     session()->invalidate();
     session()->regenerateToken();
     return redirect('/');
 })->name('logout');
 
-Route::middleware(['role:superadmin'])->group(function () {
-    Route::get('/admin', [AdminController::class, 'index']);
+Route::middleware('auth')->get('/dashboard', Dashboard::class)->name('dashboard'); // Livewire's user dashboard
+
+// 🛠 BACKPACK ADMIN ROUTES (uses 'admin' prefix, middleware, guard)
+Route::group([
+    'prefix' => config('backpack.base.route_prefix', 'admin'),
+    'middleware' => array_merge(
+        (array) config('backpack.base.web_middleware', 'web'),
+        (array) config('backpack.base.middleware_key', 'admin')
+    ),
+    'namespace' => 'App\Http\Controllers\Admin',
+], function () {
+
+    // Dashboard (fix Route [admin.dashboard])
+    Route::get('/', function () {
+        return view(backpack_view('dashboard'));
+    })->name('admin.dashboard');
+
+    // Profile
+    Route::get('user-profile', [UserProfileController::class, 'index'])->name('admin.user-profile');
+
+    // CRUD Actions
+    Route::get('application/{id}/approve', [ApplicationCrudController::class, 'approve'])->name('admin.application.approve');
+    Route::get('application/{id}/reject', [ApplicationCrudController::class, 'reject'])->name('admin.application.reject');
+    Route::get('application/{application}/confirm', [ApplicationCrudController::class, 'confirm'])->name('admin.application.confirm');
+
+    Route::get('submitted-event/{id}/approve', [SubmittedEventCrudController::class, 'approve'])->name('admin.submitted-event.approve');
+    Route::get('submitted-event/{id}/reject', [SubmittedEventCrudController::class, 'reject'])->name('admin.submitted-event.reject');
+
+    Route::get('event/{id}/submit', [EventCrudController::class, 'submit'])->name('admin.event.submit');
+
+    // Event Dashboard
+    Route::get('event-dashboard/{event}', [EventDashboardController::class, 'show'])
+        ->middleware('can:view events')
+        ->name('admin.event-dashboard');
+
+    // Impersonation routes
+    Route::impersonate();
+
+    // Route::get('impersonate/{id}', [ImpersonateController::class, 'loginAs'])->name('impersonate');
+    // Route::get('impersonate/leave', [ImpersonateController::class, 'leave'])->name('impersonate.leave');
+
+    // Optional: your CRUD definitions
+    // Route::crud('event', EventCrudController::class);
+    // Route::crud('application', ApplicationCrudController::class);
+    // etc.
 });
-Route::middleware(['admin'])->group(function () {
-    Route::get('admin/user-profile', [UserProfileController::class, 'index'])->name('admin.user-profile');
-});
-
-//Application Process
-Route::get('application/{id}/approve', [ApplicationCrudController::class, 'approve'])->name('admin.application.approve');
-Route::get('application/{id}/reject', [ApplicationCrudController::class, 'reject'])->name('admin.application.reject');
-Route::get('application/{application}/confirm', [ApplicationCrudController::class, 'confirm'])->name('admin.application.confirm');
 
 
-
-//Event Approval Process
-Route::get('submitted-event/{id}/approve', [SubmittedEventCrudController::class, 'approve'])->name('admin.submitted-event.approve');
-Route::get('submitted-event/{id}/reject', [SubmittedEventCrudController::class, 'reject'])->name('admin.submitted-event.reject');
-
-//Event Submission Button
-Route::get('/admin/event/{id}/submit', function ($id) {
-    $event = \App\Models\Event::findOrFail($id);
-
-    if (backpack_user()->hasRole('Event Leader') && $event->created_by === backpack_user()->id) {
-        $event->update(['status' => 'submitted']);
-        return redirect('/admin/draft-event')->with('success', 'Event submitted for approval.');
-    }
-
-    abort(403, 'You are not allowed to submit this event.');
-})->middleware(['admin']);
-
-//Event Dashboard
-Route::middleware(['admin'])->group(function () {
-    Route::get('admin/event-dashboard/{event}', [EventDashboardController::class, 'show'])
-        ->name('admin.event-dashboard')
-        ->middleware('can:view events');
-});
 
 

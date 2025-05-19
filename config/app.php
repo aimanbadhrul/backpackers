@@ -123,4 +123,9 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    // 'providers' => [
+    // // ...
+    // Lab404\Impersonate\ImpersonateServiceProvider::class,
+    // ],
+
 ];

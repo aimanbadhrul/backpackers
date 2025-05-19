@@ -20,7 +20,7 @@ return [
     /**
      * The default impersonator guard used.
      */
-    'default_impersonator_guard' => 'web',
+    'default_impersonator_guard' => 'backpack',
 
     /**
      * The URI to redirect after taking an impersonation.
@@ -28,7 +28,7 @@ return [
      * Only used in the built-in controller.
      * * Use 'back' to redirect to the previous page
      */
-    'take_redirect_to' => '/',
+    'take_redirect_to' => '/admin/dashboard',
 
     /**
      * The URI to redirect after leaving an impersonation.
@@ -36,6 +36,6 @@ return [
      * Only used in the built-in controller.
      * Use 'back' to redirect to the previous page
      */
-    'leave_redirect_to' => '/',
+    'leave_redirect_to' => '/admin/user',
 
 ];

@@ -1,18 +1,19 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Admin\Applications;
 
-use App\Http\Requests\RejectedApplicationRequest;
+use App\Models\Event;
 use App\Models\Application;
+use App\Http\Requests\PendingApplicationRequest;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
 
 /**
- * Class RejectedApplicationCrudController
+ * Class PendingApplicationCrudController
  * @package App\Http\Controllers\Admin
  * @property-read \Backpack\CRUD\app\Library\CrudPanel\CrudPanel $crud
  */
-class RejectedApplicationCrudController extends ApplicationCrudController
+class PendingApplicationCrudController extends ApplicationCrudController
 {
     use \Backpack\CRUD\app\Http\Controllers\Operations\ListOperation;
     use \Backpack\CRUD\app\Http\Controllers\Operations\CreateOperation;
@@ -27,9 +28,10 @@ class RejectedApplicationCrudController extends ApplicationCrudController
      */
     public function setup()
     {
-        CRUD::setModel(\App\Models\RejectedApplication::class);
-        CRUD::setRoute(config('backpack.base.route_prefix') . '/rejected-application');
-        CRUD::setEntityNameStrings('rejected application', 'rejected applications');
+        CRUD::setModel(\App\Models\PendingApplication::class);
+        CRUD::setRoute(config('backpack.base.route_prefix') . '/pending-application');
+        CRUD::setEntityNameStrings('pending application', 'pending applications');
+        CRUD::addClause('where', 'status', 'pending');
     }
 
     /**
@@ -41,15 +43,25 @@ class RejectedApplicationCrudController extends ApplicationCrudController
     protected function setupListOperation()
     {
         $user = backpack_user();
-        parent::setupListOperation();
-        
         CRUD::removeButton('create');
-        CRUD::addClause('where', 'status', 'rejected');
+
+        if ($user->hasRole('Event Leader')) {
+                $eventIds = Event::where('created_by', $user->id)->pluck('id');
+                $this->crud->addClause('whereIn', 'event_id', $eventIds);
+        }
+        
+        parent::setupListOperation();
 
         if ($user->hasRole('Superadmin')) {
-            CRUD::addButton('line', 'update', 'view', 'crud::buttons.update');
-            CRUD::addButton('line', 'delete', 'view', 'crud::buttons.delete');
+        CRUD::addButton('line', 'update', 'view', 'crud::buttons.update');
+        CRUD::addButton('line', 'delete', 'view', 'crud::buttons.delete');
+        }
+
+        if ($user->hasRole('Event Leader') || $user->hasRole('Superadmin')) {
+            CRUD::addButtonFromModelFunction('line', 'reject', 'rejectButton', 'end');
+            CRUD::addButtonFromModelFunction('line', 'approve', 'approveButton', 'end');
             }
+
     }
 
     /**
@@ -60,7 +72,7 @@ class RejectedApplicationCrudController extends ApplicationCrudController
      */
     protected function setupCreateOperation()
     {
-        CRUD::setValidation(RejectedApplicationRequest::class);
+        CRUD::setValidation(PendingApplicationRequest::class);
         CRUD::setFromDb(); // set fields from db columns.
 
         /**
@@ -78,5 +90,17 @@ class RejectedApplicationCrudController extends ApplicationCrudController
     protected function setupUpdateOperation()
     {
         parent::setupCreateOperation();
+    }
+
+    protected function setupShowOperation()
+    {
+        parent::setupShowOperation();
+        CRUD::removeButton('update'); // Remove Edit button
+        CRUD::removeButton('delete'); // Remove Delete button
+
+        
+            CRUD::addButtonFromModelFunction('line', 'reject', 'rejectButtonShow', 'end');
+            CRUD::addButtonFromModelFunction('line', 'approve', 'approveButtonShow', 'beginning');
+        
     }
 }

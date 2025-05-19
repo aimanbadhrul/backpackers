@@ -12,19 +12,19 @@ class ParticipantUserSeeder extends Seeder
 {
     public function run()
     {
-        // Ensure the role exists
-        $participantRole = Role::firstOrCreate(['name' => 'Participant', 'guard_name' => 'backpack']);
+        // // Ensure the role exists
+        // $participantRole = Role::firstOrCreate(['name' => 'Participant', 'guard_name' => 'backpack']);
 
-        // Create 10 users with the role Participant
-        for ($i = 1; $i <= 10; $i++) {
-            $user = User::create([
-                'name' => 'Participant ' . $i,
-                'email' => 'participant' . $i . '@example.com',
-                'password' => Hash::make('password'), // Default password: password
-            ]);
+        // // Create 10 users with the role Participant
+        // for ($i = 1; $i <= 10; $i++) {
+        //     $user = User::create([
+        //         'name' => 'Participant ' . $i,
+        //         'email' => 'participant' . $i . '@example.com',
+        //         'password' => Hash::make('password'), // Default password: password
+        //     ]);
 
-            // Assign role to user
-            $user->assignRole($participantRole);
-        }
+        //     // Assign role to user
+        //     $user->assignRole($participantRole);
+        // }
     }
 }

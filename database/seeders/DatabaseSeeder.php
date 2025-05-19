@@ -14,29 +14,37 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
 {
-    $superadmin = Role::firstOrCreate(['name' => 'superadmin']);
-    $officeAdmin = Role::firstOrCreate(['name' => 'office_admin']);
-    $user = Role::firstOrCreate(['name' => 'user']);
+    $superadmin = Role::firstOrCreate(['name' => 'Superadmin']);
+    $officeAdmin = Role::firstOrCreate(['name' => 'Office Admin']);
+    $eventLeader = Role::firstOrCreate(['name' => 'Event Leader']);
+    $user = Role::firstOrCreate(['name' => 'User']);
     
     $superadmin = User::firstOrCreate([
         'name' => 'Super Admin',
         'email' => 'superadmin@backpackers.com',
         'password' => bcrypt('qwerty')
     ]);
-    $superadmin->assignRole('superadmin');
+    $superadmin->assignRole('Superadmin');
 
     $officeAdmin = User::firstOrCreate([
         'name' => 'Office Admin',
         'email' => 'officeadmin@backpackers.com',
         'password' => bcrypt('qwerty')
     ]);
-    $officeAdmin->assignRole('office_admin');
+    $officeAdmin->assignRole('Office Admin');
+
+    $eventLeader = User::firstOrCreate([
+        'name' => 'E Leader 1',
+        'email' => 'eventleader1@backpackers.com',
+        'password' => bcrypt('qwerty')
+    ]);
+    $eventLeader->assignRole('Event Leader');
 
     $user = User::firstOrCreate([
         'name' => 'User1',
         'email' => 'user1@backpackers.com',
         'password' => bcrypt('qwerty')
     ]);
-    $user->assignRole('user');
+    $user->assignRole('User');
 }
 }

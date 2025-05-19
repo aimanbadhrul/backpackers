@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Admin\Events;
 
 use App\Models\Event;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
@@ -31,6 +31,8 @@ class DraftEventCrudController extends EventCrudController
         CRUD::setEntityNameStrings('Draft Event', 'Draft Events');
         CRUD::setHeading('Drafts');
         CRUD::setSubheading('Manage your event drafts');
+
+        CRUD::addClause('whereIn', 'status', ['draft', 'rejected']);
     }
 
     /**
@@ -45,61 +47,31 @@ class DraftEventCrudController extends EventCrudController
         parent::setupListOperation();
         
         CRUD::setEntityNameStrings('Event', 'Events');
-        CRUD::addClause('whereIn', 'status', ['draft', 'rejected']);
 
-        if (backpack_user()->hasRole('Event Leader')) {
-            CRUD::addClause('where', 'created_by', backpack_user()->id);
-        }
+        //Redundant
+        // if (!$user->hasRole('Superadmin')) {
+        //     CRUD::addClause('where', 'created_by', backpack_user()->id);
+        // }
 
-        if ($user->hasRole('Superadmin')) {
-            CRUD::addButton('line', 'update', 'view', 'crud::buttons.update');
-            CRUD::addButton('line', 'delete', 'view', 'crud::buttons.delete');
-            }
-        
+        CRUD::addButton('line', 'update', 'view', 'crud::buttons.update');
+        CRUD::addButton('line', 'delete', 'view', 'crud::buttons.delete');
+
         CRUD::addButtonFromModelFunction('line', 'submit_for_approval', 'submitButton', 'end');
     }
 
-    /**
-     * Define what happens when the Create operation is loaded.
-     * 
-     * @see https://backpackforlaravel.com/docs/crud-operation-create
-     * @return void
-     */
     protected function setupCreateOperation()
     {
         parent::setupCreateOperation();
     }
 
-    /**
-     * Define what happens when the Update operation is loaded.
-     * 
-     * @see https://backpackforlaravel.com/docs/crud-operation-update
-     * @return void
-     */
     protected function setupUpdateOperation()
     {
         $this->setupCreateOperation();
         CRUD::setHeading('Edit Draft');
-
-        $event = $this->crud->getCurrentEntry();
-
-        if (backpack_user()->hasRole('Event Leader')) {
-            if (!$event->canEdit()) {
-                abort(403, 'You are not allowed to edit this event.');
-            }
-        }
-        
-        if ($event->canSubmitForApproval()) {
-            CRUD::addSaveAction([
-                'name' => 'submit_for_approval',
-                'redirect' => fn($crud, $request, $itemId) => url('admin/event/' . $itemId . '/submit'),
-                'button_text' => 'Submit for Approval',
-            ]);
-        }
     }
 
     public function create()
-{
-    return redirect(backpack_url('event/create'));
-}
+    {
+        return redirect(backpack_url('event/create'));
+    }
 }

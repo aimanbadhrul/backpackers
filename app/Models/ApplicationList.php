@@ -4,9 +4,9 @@ namespace App\Models;
 
 use Backpack\CRUD\app\Models\Traits\CrudTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Spatie\Permission\Models\Permission as SpatiePermission;
+use Illuminate\Database\Eloquent\Model;
 
-class Permission extends SpatiePermission
+class ApplicationList extends Model
 {
     use CrudTrait;
     use HasFactory;
@@ -17,24 +17,19 @@ class Permission extends SpatiePermission
     |--------------------------------------------------------------------------
     */
 
-    protected $table = 'permissions';
+    protected $table = 'application';
     // protected $primaryKey = 'id';
     // public $timestamps = false;
     protected $guarded = ['id'];
     // protected $fillable = [];
     // protected $hidden = [];
-    protected $attributes = [
-        'guard_name' => 'backpack', // Set default guard
-    ];
+
     /*
     |--------------------------------------------------------------------------
     | FUNCTIONS
     |--------------------------------------------------------------------------
     */
-    public function getRolesCount()
-    {
-        return $this->roles()->count();
-    }
+
     /*
     |--------------------------------------------------------------------------
     | RELATIONS

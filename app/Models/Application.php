@@ -42,6 +42,10 @@ class Application extends Model
     protected $casts = [
         'approval_date' => 'datetime',
     ];
+
+    protected $attributes = [
+        'status' => 'pending', // Default value
+    ];
     
     
     // protected $hidden = [];
@@ -115,18 +119,34 @@ class Application extends Model
             </a>';
     }
 
-    public function confirmButton()
-    {
-        if ($this->status !== 'approved') {
-        return;
-        }
+    // public function confirmButton()
+    // {
+    //     if ($this->status !== 'approved') {
+    //     return;
+    //     }
 
+    //     $url = route('admin.application.confirm', $this->id);
+    
+    //     return '<span class="float-end"><a href="' . $url . '" class="btn btn-sm btn-success" data-bs-toggle="tooltip" title="Confirm">
+    //     <i class="la la-check"></i>Confirm
+    //     </a></span>';
+    // }
+
+    public function getConfirmButtonHtml()
+    {
+        $urlprocess = url("/admin/approved-application/{$this->id}/edit#approval");
         $url = route('admin.application.confirm', $this->id);
+    
+        if ($this->payment_status === 'pending') {
+            return '<span class="float-end"><a href="' . $urlprocess . '" class="btn btn-sm btn-warning" data-bs-toggle="tooltip" title="Process Payment">Payment
+            </a></span>';
+        }
     
         return '<span class="float-end"><a href="' . $url . '" class="btn btn-sm btn-success" data-bs-toggle="tooltip" title="Confirm">
         <i class="la la-check"></i>Confirm
         </a></span>';
     }
+    
     public function isConfirmed()
     {
         return $this->status === 'confirmed';

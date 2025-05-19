@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Role;
 use App\Models\Permission;
+use Illuminate\Http\Request;
 use App\Http\Requests\RoleRequest;
+use Illuminate\Support\Facades\Log;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
 
@@ -29,19 +31,19 @@ class RoleCrudController extends CrudController
     protected $model = Role::class;
     public function setup()
     {
+        if (!backpack_user() || !backpack_user()->can('manage roles')) {
+            // Deny access to all CRUD operations
+            CRUD::denyAccess(['list', 'create', 'update', 'delete', 'show']);
+            return;
+        }
+
         CRUD::setModel(Role::class);
         CRUD::setRoute(backpack_url('role'));
         CRUD::setEntityNameStrings('role', 'roles');
-        CRUD::setColumns(['name']);
-        CRUD::addField(['name' => 'name', 'type' => 'text', 'label' => 'Role Name']);
+        // CRUD::setColumns(['name']);
+        // CRUD::addField(['name' => 'name', 'type' => 'text', 'label' => 'Role Name']);
     }
 
-    /**
-     * Define what happens when the List operation is loaded.
-     * 
-     * @see  https://backpackforlaravel.com/docs/crud-operation-list-entries
-     * @return void
-     */
     protected function setupListOperation()
     {
         CRUD::column('name')->label('Role Name');
@@ -90,25 +92,20 @@ class RoleCrudController extends CrudController
         CRUD::addField([
             'label' => "Permissions",
             'type' => 'checklist',
-            'name' => 'permissions', // Spatie relationship
-            'entity' => 'permissions', // The method in Role model
-            'attribute' => 'name', // Show permission names
-            'model' => Permission::class, 
-            'pivot' => true, // Many-to-many relationship
+            'name' => 'permissions',
+            'entity' => 'permissions',
+            'attribute' => 'name',
+            'model' => \Spatie\Permission\Models\Permission::class,
+            'pivot' => true,
         ]);
-
-        /**
-         * Fields can be defined using the fluent syntax:
-         * - CRUD::field('price')->type('number');
-         */
     }
 
-    /**
-     * Define what happens when the Update operation is loaded.
-     * 
-     * @see https://backpackforlaravel.com/docs/crud-operation-update
-     * @return void
-     */
+    protected function afterSave($entry)
+    {
+        $permissions = request()->input('permissions') ?? [];
+        $entry->permissions()->sync($permissions);
+    }
+
     protected function setupUpdateOperation()
     {
         $this->setupCreateOperation();
@@ -120,7 +117,9 @@ class RoleCrudController extends CrudController
             'name' => 'name',
             'label' => 'Role Name',
         ]);
+
         CRUD::column('guard_name')->label('Guard');
+
         CRUD::addColumn([
             'name' => 'permissions',
             'label' => 'Permissions',

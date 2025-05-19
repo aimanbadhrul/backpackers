@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Admin\Events;
 
 use App\Models\Event;
 use App\Models\Application;
@@ -32,6 +32,8 @@ class ApprovedEventCrudController extends EventCrudController
         CRUD::setModel(Event::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/approved-event');
         CRUD::setEntityNameStrings('approved event', 'approved events');
+
+        CRUD::addClause('where', 'status', 'approved');
     }
 
     /**
@@ -42,18 +44,10 @@ class ApprovedEventCrudController extends EventCrudController
      */
     protected function setupListOperation()
     {
-        CRUD::removeButton('create');
-
-        if (backpack_user()->hasRole('Event Leader')) {
-            CRUD::addClause('where', 'created_by', backpack_user()->id);
-        }
-
-        // Only show approved events
-        CRUD::addClause('where', 'status', 'approved');
-
         $user = backpack_user();
         parent::setupListOperation();
 
+        CRUD::removeButton('create');
         if ($user->hasRole('Superadmin')) {
             CRUD::addButton('line', 'update', 'view', 'crud::buttons.update');
             CRUD::addButton('line', 'delete', 'view', 'crud::buttons.delete');
@@ -70,31 +64,14 @@ class ApprovedEventCrudController extends EventCrudController
         ]);
     }
 
-    /**
-     * Define what happens when the Create operation is loaded.
-     * 
-     * @see https://backpackforlaravel.com/docs/crud-operation-create
-     * @return void
-     */
     protected function setupCreateOperation()
     {
-        CRUD::setValidation(ApprovedEventRequest::class);
-        CRUD::setFromDb(); // set fields from db columns.
-
-        /**
-         * Fields can be defined using the fluent syntax:
-         * - CRUD::field('price')->type('number');
-         */
+        parent::setupCreateOperation();
     }
 
-    /**
-     * Define what happens when the Update operation is loaded.
-     * 
-     * @see https://backpackforlaravel.com/docs/crud-operation-update
-     * @return void
-     */
     protected function setupUpdateOperation()
     {
+        $user = backpack_user();
         CRUD::setValidation(EventRequest::class);
         CRUD::setHeading($this->crud->getCurrentEntry()->title ?? 'Edit Approved Event');
         CRUD::setSubheading('Details added here will be displayed on the Event Dashboard');
@@ -112,23 +89,37 @@ class ApprovedEventCrudController extends EventCrudController
         ->tab('Details');
 
         CRUD::field('start_date')
-        ->wrapper(['class' => 'form-group col-md-3'])
         ->attributes(['readonly' => 'readonly'])
+        ->wrapper(['class' => 'form-group col-md-3'])
         ->tab('Details');
 
         CRUD::field('end_date')
-        ->wrapper(['class' => 'form-group col-md-3'])
         ->attributes(['readonly' => 'readonly'])
+        ->wrapper(['class' => 'form-group col-md-3'])
         ->tab('Details');
 
         CRUD::field('max_participants')
         ->attributes(['readonly' => 'readonly'])
+        ->wrapper(['class' => 'form-group col-md-3'])
         ->tab('Details');
 
         CRUD::field('cost')
         ->label('Cost (RM)')
         ->attributes(['readonly' => 'readonly'])
+        ->wrapper(['class' => 'form-group col-md-3'])
         ->tab('Details');
+
+        if ($user->hasRole('Superadmin')) {
+            CRUD::addField([
+                'name' => 'status',
+                'label' => 'Status',
+                'type' => 'select_from_array',
+                'options' => Event::getStatuses(),
+                'allows_null' => false,
+                'default' => 'draft',
+                'tab' => 'Details'
+            ]);
+        }
 
         //Participant List Tab
         $event = $this->crud->getCurrentEntry();
@@ -149,6 +140,77 @@ class ApprovedEventCrudController extends EventCrudController
                 'height' => 300,
             ],
         ]);
+
+        CRUD::addField([
+            'name' => 'checklist',
+            'label' => 'Item Checklist',
+            'type' => 'summernote',
+            'tab' => 'Item Checklist',
+            'options' => [
+                'height' => 300,
+            ],
+        ]);
+
+        CRUD::addField([
+            'name' => 'additional_info',
+            'label' => 'Additional Information',
+            'type' => 'summernote',
+            'tab' => 'Additional Information',
+            'options' => [
+                'height' => 300,
+            ],
+        ]);
+    }
+    
+    protected function setupShowOperation()
+    {
+        parent::setupShowOperation();
+    }
+
+    private function getApprovedParticipantsHtml($event)
+    {
+        $approvedParticipants = $event->approvedParticipants;
+    
+        $html = '<h5><strong>Participants</strong></h5>';
+    
+        if ($approvedParticipants->isEmpty()) {
+            $html .= '<p>No approved participants yet.</p>';
+        } else {
+            $html .= '
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Full Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                            </tr>
+                        </thead>
+                        <tbody>';
+            foreach ($approvedParticipants as $index => $participant) {
+                $html .= '
+                            <tr>
+                                <td>' . ($index + 1) . '</td>
+                                <td>' . e($participant->full_name) . '</td>
+                                <td>' . e($participant->email) . '</td>
+                                <td>' . e($participant->phone) . '</td>
+                            </tr>';
+            }
+            $html .= '
+                        </tbody>
+                    </table>
+                </div>';
+        }
+    
+        return $html;
+    }  
+}
+
+
+
+
+
 
         //Item Checklist Template for now, before PRO version
 
@@ -236,70 +298,4 @@ class ApprovedEventCrudController extends EventCrudController
         //     'new_item_label'  => 'Add Checklist Item',
         //     'tab'             => 'Item Checklist',
         // ]);
-
-        CRUD::addField([
-            'name' => 'checklist',
-            'label' => 'Item Checklist',
-            'type' => 'summernote',
-            'tab' => 'Item Checklist',
-            'options' => [
-                'height' => 300,
-            ],
-        ]);
-
-        CRUD::addField([
-            'name' => 'additional_info',
-            'label' => 'Additional Information',
-            'type' => 'summernote',
-            'tab' => 'Additional Information',
-            'options' => [
-                'height' => 300,
-            ],
-        ]);
-    }
-    
-    protected function setupShowOperation()
-    {
-        parent::setupShowOperation();
-    }
-
-    private function getApprovedParticipantsHtml($event)
-    {
-        $approvedParticipants = $event->approvedParticipants;
-    
-        $html = '<h5><strong>Participants</strong></h5>';
-    
-        if ($approvedParticipants->isEmpty()) {
-            $html .= '<p>No approved participants yet.</p>';
-        } else {
-            $html .= '
-                <div class="table-responsive">
-                    <table class="table table-bordered table-sm">
-                        <thead>
-                            <tr>
-                                <th></th>
-                                <th>Full Name</th>
-                                <th>Email</th>
-                                <th>Phone</th>
-                            </tr>
-                        </thead>
-                        <tbody>';
-            foreach ($approvedParticipants as $index => $participant) {
-                $html .= '
-                            <tr>
-                                <td>' . ($index + 1) . '</td>
-                                <td>' . e($participant->full_name) . '</td>
-                                <td>' . e($participant->email) . '</td>
-                                <td>' . e($participant->phone) . '</td>
-                            </tr>';
-            }
-            $html .= '
-                        </tbody>
-                    </table>
-                </div>';
-        }
-    
-        return $html;
-    }  
-}
 
