@@ -1,18 +1,18 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Admin\Applications;
 
-use App\Http\Requests\ConfirmedApplicationRequest;
 use App\Models\Application;
+use App\Http\Requests\CompletedApplicationRequest;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
 
 /**
- * Class ConfirmedApplicationCrudController
+ * Class CompletedApplicationCrudController
  * @package App\Http\Controllers\Admin
  * @property-read \Backpack\CRUD\app\Library\CrudPanel\CrudPanel $crud
  */
-class ConfirmedApplicationCrudController extends ApplicationCrudController
+class CompletedApplicationCrudController extends ApplicationCrudController
 {
     use \Backpack\CRUD\app\Http\Controllers\Operations\ListOperation;
     use \Backpack\CRUD\app\Http\Controllers\Operations\CreateOperation;
@@ -27,9 +27,12 @@ class ConfirmedApplicationCrudController extends ApplicationCrudController
      */
     public function setup()
     {
-        CRUD::setModel(\App\Models\ConfirmedApplication::class);
-        CRUD::setRoute(config('backpack.base.route_prefix') . '/confirmed-application');
-        CRUD::setEntityNameStrings('confirmed application', 'confirmed applications');
+        CRUD::setModel(Application::class);
+        CRUD::setRoute(config('backpack.base.route_prefix') . '/completed-application');
+        CRUD::setEntityNameStrings('Completed Application', 'Completed Applications');
+        CRUD::addClause('where', 'status', 'completed');
+
+
     }
 
     /**
@@ -40,35 +43,26 @@ class ConfirmedApplicationCrudController extends ApplicationCrudController
      */
     protected function setupListOperation()
     {
-        parent::setupListOperation();
-        CRUD::addClause('where', 'status', 'confirmed');
-    }
+        $user = backpack_user();
 
-    /**
-     * Define what happens when the Create operation is loaded.
-     * 
-     * @see https://backpackforlaravel.com/docs/crud-operation-create
-     * @return void
-     */
+        parent::setupListOperation();
+
+        CRUD::removeButton('create');
+        if ($user->hasRole('Superadmin')) {
+            CRUD::addButton('line', 'update', 'view', 'crud::buttons.update');
+            CRUD::addButton('line', 'delete', 'view', 'crud::buttons.delete');
+        }
+    }
     protected function setupCreateOperation()
     {
-        CRUD::setValidation(ConfirmedApplicationRequest::class);
-        CRUD::setFromDb(); // set fields from db columns.
-
-        /**
-         * Fields can be defined using the fluent syntax:
-         * - CRUD::field('price')->type('number');
-         */
+        abort(403);
     }
-
-    /**
-     * Define what happens when the Update operation is loaded.
-     * 
-     * @see https://backpackforlaravel.com/docs/crud-operation-update
-     * @return void
-     */
     protected function setupUpdateOperation()
     {
-        $this->setupCreateOperation();
+        abort(403);
+    }
+    protected function setupShowOperation()
+    {
+        parent::setupShowOperation();
     }
 }

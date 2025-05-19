@@ -1,18 +1,18 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Admin\Applications;
 
-use App\Http\Requests\RejectedApplicationRequest;
+use App\Http\Requests\ConfirmedApplicationRequest;
 use App\Models\Application;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
 
 /**
- * Class RejectedApplicationCrudController
+ * Class ConfirmedApplicationCrudController
  * @package App\Http\Controllers\Admin
  * @property-read \Backpack\CRUD\app\Library\CrudPanel\CrudPanel $crud
  */
-class RejectedApplicationCrudController extends ApplicationCrudController
+class ConfirmedApplicationCrudController extends ApplicationCrudController
 {
     use \Backpack\CRUD\app\Http\Controllers\Operations\ListOperation;
     use \Backpack\CRUD\app\Http\Controllers\Operations\CreateOperation;
@@ -27,9 +27,11 @@ class RejectedApplicationCrudController extends ApplicationCrudController
      */
     public function setup()
     {
-        CRUD::setModel(\App\Models\RejectedApplication::class);
-        CRUD::setRoute(config('backpack.base.route_prefix') . '/rejected-application');
-        CRUD::setEntityNameStrings('rejected application', 'rejected applications');
+        CRUD::setModel(\App\Models\ConfirmedApplication::class);
+        CRUD::setRoute(config('backpack.base.route_prefix') . '/confirmed-application');
+        CRUD::setEntityNameStrings('confirmed application', 'confirmed applications');
+
+        CRUD::addClause('where', 'status', 'confirmed');
     }
 
     /**
@@ -40,8 +42,15 @@ class RejectedApplicationCrudController extends ApplicationCrudController
      */
     protected function setupListOperation()
     {
+        $user = backpack_user();
         parent::setupListOperation();
-        CRUD::addClause('where', 'status', 'rejected');
+
+        CRUD::removeButton('create');
+
+        if ($user->hasRole('Superadmin')) {
+            CRUD::addButton('line', 'update', 'view', 'crud::buttons.update');
+            CRUD::addButton('line', 'delete', 'view', 'crud::buttons.delete');
+            }
     }
 
     /**
@@ -52,7 +61,7 @@ class RejectedApplicationCrudController extends ApplicationCrudController
      */
     protected function setupCreateOperation()
     {
-        CRUD::setValidation(RejectedApplicationRequest::class);
+        CRUD::setValidation(ConfirmedApplicationRequest::class);
         CRUD::setFromDb(); // set fields from db columns.
 
         /**
@@ -69,6 +78,6 @@ class RejectedApplicationCrudController extends ApplicationCrudController
      */
     protected function setupUpdateOperation()
     {
-        $this->setupCreateOperation();
+        parent::setupCreateOperation();
     }
 }

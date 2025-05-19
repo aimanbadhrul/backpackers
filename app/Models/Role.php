@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Role extends SpatieRole
 {
     use CrudTrait;
-    use HasFactory, HasRoles;
+    use HasFactory;
 
     /*
     |--------------------------------------------------------------------------
@@ -34,7 +34,7 @@ class Role extends SpatieRole
     | FUNCTIONS
     |--------------------------------------------------------------------------
     */
-
+    
     /*
     |--------------------------------------------------------------------------
     | RELATIONS

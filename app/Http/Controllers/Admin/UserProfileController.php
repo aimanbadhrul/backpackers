@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 
+use App\Models\User;
+
 class UserProfileController extends CrudController
 {
     public function index()
@@ -17,7 +19,7 @@ class UserProfileController extends CrudController
     }
     public function setup()
     {
-        $this->crud->setModel('App\Models\User');
+        $this->crud->setModel(User::class);
         $this->crud->setRoute(backpack_url('user-profile'));
         $this->crud->setEntityNameStrings('User Profile', 'User Profile');
 

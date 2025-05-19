@@ -24,9 +24,34 @@ class ApplicationRequest extends FormRequest
      */
     public function rules()
     {
-        return [
-            // 'name' => 'required|min:5|max:255'
+        $rules = [
+            'event_id' => 'required|exists:events,id',
+            'user_id' => 'required|exists:users,id',
+            // 'status' => 'nullable|in:pending,approved,rejected,confirmed',
+            'full_name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'phone' => 'required|string|max:20',
+            'emergency_contact_name' => 'required|string|max:255',
+            'emergency_contact_phone' => 'required|string|max:20',
+            'submission_date' => 'nullable|date',
+    
+            // Optional
+            'notes' => 'nullable|string',
+            'approval_date' => 'nullable|date',
+            'rejection_reason' => 'nullable|string',
+            'payment_status' => 'nullable|in:pending,paid,waived',
+            'payment_receipt' => 'nullable|file',
+            'group' => 'nullable|string',
+            'special_requests' => 'nullable|string',
         ];
+
+        if (backpack_auth()->user()->hasRole('Superadmin') || 
+        (isset($this->application) && 
+         $this->application->event->created_by == backpack_auth()->id())) {
+        $rules['status'] = 'required|in:pending,approved,rejected,confirmed';
+    }
+
+    return $rules;
     }
 
     /**

@@ -31,7 +31,10 @@ class Permission extends SpatiePermission
     | FUNCTIONS
     |--------------------------------------------------------------------------
     */
-
+    public function getRolesCount()
+    {
+        return $this->roles()->count();
+    }
     /*
     |--------------------------------------------------------------------------
     | RELATIONS

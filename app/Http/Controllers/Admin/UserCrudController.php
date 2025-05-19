@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Admin;
 use App\Models\User;
 use App\Http\Requests\UserRequest;
 use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Backpack\CRUD\app\Library\Widget;
+use Illuminate\Support\Facades\Route;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
 
@@ -29,6 +31,11 @@ class UserCrudController extends CrudController
      */
     public function setup()
     {
+        if (!backpack_user()->can('manage users')) {
+            CRUD::denyAccess(['list', 'create', 'update', 'delete', 'show']);
+            return abort(403);
+        }
+
         $routePrefix = config('backpack.base.route_prefix');
         CRUD::setModel(User::class);
         CRUD::setRoute($routePrefix . '/user');
@@ -36,22 +43,22 @@ class UserCrudController extends CrudController
 
         parent::setup();
 
-        // Get dynamic data
-        $userCount = User::count();
+        // // Get dynamic data
+        // $userCount = User::count();
 
-        // Add a row div for better layout
-        Widget::add()->to('before_content')->type('div')->class('row mb-3')->content([
+        // // Add a row div for better layout
+        // Widget::add()->to('before_content')->type('div')->class('row mb-3')->content([
 
-        // Progress widget
-        Widget::make()
-            ->type('progress')
-            ->class('card border-0 text-white bg-primary')
-            ->progressClass('progress-bar')
-            ->value($userCount)
-            ->description('Registered users.')
-            ->progress(100 * (int)$userCount / 1000)
-            ->hint(1000 - $userCount . ' more until next milestone.'),
-        ]);
+        // // Progress widget
+        // Widget::make()
+        //     ->type('progress')
+        //     ->class('card border-0 text-white bg-primary')
+        //     ->progressClass('progress-bar')
+        //     ->value($userCount)
+        //     ->description('Registered users.')
+        //     ->progress(100 * (int)$userCount / 1000)
+        //     ->hint(1000 - $userCount . ' more until next milestone.'),
+        // ]);
 
     }
 
@@ -83,6 +90,9 @@ class UserCrudController extends CrudController
         'attribute' => 'name',
         'model' => "Spatie\Permission\Models\Role"
     ]);
+
+    CRUD::addButtonFromModelFunction('line', 'impersonate', 'getImpersonateButton', 'beginning');
+
     }
 
     /**
@@ -186,4 +196,5 @@ class UserCrudController extends CrudController
 
 //     return redirect()->back()->with('success', 'User updated successfully.');
 // }
+
 }

@@ -28,6 +28,8 @@ return [
 
     ],
 
+    'guard_name' => 'backpack',
+
     'table_names' => [
 
         /*
