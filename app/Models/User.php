@@ -59,8 +59,12 @@ class User extends Authenticatable
         if (backpack_user()->can('impersonate users') && backpack_user()->id !== $this->id) {
             return '<a class="btn btn-sm btn-link" href="'.route('impersonate', $this->id).'"><i class="la la-user-secret"></i> Login as</a>';
         }
+
+        elseif (backpack_user()->can('impersonate users') && backpack_user()->id === $this->id) {
+            return '<a class="btn btn-sm btn-link disabled" href="'.route('impersonate', $this->id).'"><i class="la la-user-secret"></i> Login as</a>';
+        }        
     
-        return '<a class="btn btn-sm btn-link disabled" href=""><i class="la la-user-secret"></i> Login as</a>';
+        // return '<a class="btn btn-sm btn-link disabled" href=""><i class="la la-user-secret"></i> Login as</a>';
     }
     
 }

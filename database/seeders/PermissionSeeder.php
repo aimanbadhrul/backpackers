@@ -14,21 +14,19 @@ class PermissionSeeder extends Seeder
         // Define permissions
         $permissions = [
             // Events
-            'create events',
-            'edit own events',
-            'submit events for approval',
+            'manage events',
             'approve events',
-            'view all events',
 
             // Applications
-            'view applications',
+            'view all applications',
             'approve applications',
-            'reject applications',
+            'manage applications',
 
             // Users & Roles
             'manage users',
             'manage roles',
             'manage permissions',
+            'impersonate users'
         ];
 
         // Create permissions

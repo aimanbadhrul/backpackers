@@ -115,19 +115,28 @@ class UserCrudController extends CrudController
         CRUD::addField([
             'name' => 'email',
             'label' => 'Email',
-            'type' => 'email'
+            'type' => 'email',
+            'attributes' => [
+                'autocomplete' => 'off',
+            ],
         ]);
 
         CRUD::addField([
             'name' => 'password',
             'label' => 'Password',
-            'type' => 'password'
+            'type' => 'password',
+            'attributes' => [
+                'autocomplete' => 'new-password', // safer for password fields
+            ],
         ]);
 
         CRUD::addField([
             'name' => 'password_confirmation',
             'label' => 'Confirm Password',
             'type' => 'password',
+            'attributes' => [
+                'autocomplete' => 'new-password',
+            ],
         ]);
 
         CRUD::addField([
@@ -149,7 +158,30 @@ class UserCrudController extends CrudController
      */
     protected function setupUpdateOperation()
     {
-        $this->setupCreateOperation();
+        CRUD::setValidation(UserRequest::class);
+        // CRUD::setFromDb(); // set fields from db columns.
+
+        CRUD::addField([
+            'name' => 'name',
+            'label' => 'Name',
+            'type' => 'text'
+        ]);
+
+        CRUD::addField([
+            'name' => 'email',
+            'label' => 'Email',
+            'type' => 'email'
+        ]);
+
+        CRUD::addField([
+            'name' => 'roles',
+            'label' => 'Roles',
+            'type' => 'checklist',
+            'entity' => 'roles',
+            'attribute' => 'name',
+            'model' => "Spatie\Permission\Models\Role",
+            'pivot' => true
+        ]);
     }
 
 //     public function store()
