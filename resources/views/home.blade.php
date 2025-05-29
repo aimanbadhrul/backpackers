@@ -31,14 +31,33 @@
 
         /* Hero Section */
         .hero {
-            background: url('https://images.pexels.com/photos/12057/pexels-photo-12057.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2') no-repeat center center/cover;
+            position: relative;
             height: 100vh;
+            color: white;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            color: white;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            background: url('https://images.pexels.com/photos/346885/pexels-photo-346885.jpeg?auto=compress&        cs=tinysrgb&w=1260&h=750&dpr=2') no-repeat center center;
+            background-size: cover;
+            background-attachment: fixed; /* Parallax effect */
+        }
+
+        .hero::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background: rgba(0, 0, 0, 0.4); /* Dark overlay */
+            z-index: 1;
+        }
+
+        .hero > * {
+            position: relative;
+            z-index: 2;
         }
 
         .hero h1 {
@@ -152,13 +171,21 @@
 <body>
 
     <!-- Hero Section -->
-    <section class="hero">
-        <h1>Welcome to Backpackers</h1>
-        <p>Your Adventure Starts Here</p>
-        <a href="https://backpackers.test/admin/login" class="button-link">
+<section class="hero">
+    <h1>Welcome to Backpackers</h1>
+    <p>Your Adventure Starts Here</p>
+
+    @if(backpack_auth()->check())
+        <a href="{{ route('admin.dashboard') }}" class="button-link">
+            <button>Go to Dashboard</button>
+        </a>
+    @else
+        <a href= "https://backpackers.test/admin/login" class="button-link">
             <button>Explore Now</button>
         </a>
-    </section>
+    @endif
+</section>
+
 
     <!-- Features Section -->
     <section class="features">
