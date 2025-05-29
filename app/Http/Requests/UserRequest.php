@@ -19,13 +19,23 @@ class UserRequest extends FormRequest
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
-    public function rules(): array
+    
+     public function rules(): array
     {
-        return [
+        $rules = [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $this->id,
-            'password' => 'nullable|min:6|confirmed', // Only required on creation
-            'roles' => 'required', // If assigning roles
+            'roles' => 'required',
         ];
+
+        if ($this->isMethod('post')) {
+            // On create
+            $rules['password'] = 'required|min:6|confirmed';
+        } elseif ($this->filled('password')) {
+            // On update, only if password is being changed
+            $rules['password'] = 'min:6|confirmed';
+        }
+
+        return $rules;
     }
 }
