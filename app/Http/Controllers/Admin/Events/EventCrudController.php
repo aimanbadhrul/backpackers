@@ -164,12 +164,6 @@ class EventCrudController extends CrudController
                 'allows_null' => false, // Ensures a selection is made
                 'default' => 'draft', // Default to Draft
             ]);
-            CRUD::field('created_by')
-            ->type('select')
-            ->label('Created By')
-            ->entity('createdBy')
-            ->model(User::class)
-            ->attribute('name');
         }
 
         CRUD::addSaveAction([
@@ -181,9 +175,19 @@ class EventCrudController extends CrudController
 
     protected function setupUpdateOperation()
     {
+        $user = backpack_user();
         $event = $this->crud->getCurrentEntry();
         $this->setupCreateOperation();
         CRUD::setHeading('Edit Event');
+
+        if ($user->hasRole('Superadmin')) {
+            CRUD::field('created_by')
+            ->type('select')
+            ->label('Created By')
+            ->entity('createdBy')
+            ->model(User::class)
+            ->attribute('name');
+        }
 
         if ($event->canSubmitForApproval()) {
             CRUD::addSaveAction([
@@ -282,6 +286,7 @@ class EventCrudController extends CrudController
             'created_by' => 'Created By',
             'location' => 'Location',
             'max_participants' => 'Max Participants',
+            'cost' => 'Cost',
             'itinerary' => 'Itinerary',
             'item_checklist' => 'Item Checklist',
             'additional_info' => 'Additional Info'
@@ -312,10 +317,33 @@ class EventCrudController extends CrudController
 
                 if ($activity->properties && $activity->properties->has('attributes')) {
                     $attributes = $activity->properties['attributes'];
+
+                    // Define the custom order
+                    $customOrder = [
+                        'status',
+                        'title',
+                        'start_date',
+                        'end_date',
+                        'location',
+                        'max_participants',
+                        'cost',
+                        'itinerary',
+                        'item_checklist',
+                        'additional_info',
+                        'created_by',
+                    ];
+
+                    // Sort attributes based on the custom order
+                    uksort($attributes, function ($a, $b) use ($customOrder) {
+                        $posA = array_search($a, $customOrder);
+                        $posB = array_search($b, $customOrder);
+                        return $posA <=> $posB;
+                    });
+
                     foreach ($attributes as $key => $value) {
                         $label = $labelMap[$key] ?? ucfirst(str_replace('_', ' ', $key));
-                        
-                        // Format value based on key (simple date check)
+
+                        // Format value based on key
                         if (in_array($key, ['start_date', 'end_date']) && strtotime($value)) {
                             $formattedValue = \Carbon\Carbon::parse($value)->format('d M Y');
                         } elseif ($key === 'created_by') {
@@ -324,10 +352,11 @@ class EventCrudController extends CrudController
                         } else {
                             $formattedValue = e($value);
                         }
-                        
+
                         $changes .= "<strong>{$label}</strong>: {$formattedValue}<br>";
                     }
                 }
+
 
                 $html .= '
                             <tr>
