@@ -111,7 +111,7 @@ class Event extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['status', 'title', 'start_date', 'end_date', 'location','max_participants','itinerary', 'item_checklist', 'additional_info', 'created_by'])
+            ->logOnly(['status', 'title', 'start_date', 'end_date', 'location','max_participants','cost','itinerary', 'item_checklist', 'additional_info', 'created_by'])
             ->logOnlyDirty()
             ->useLogName('event')
             ->setDescriptionForEvent(function (string $eventName) {
@@ -135,6 +135,9 @@ class Event extends Model
                 }
                 if ($this->isDirty('max_participants')) {
                     $changes[] = 'Max participants';
+                }                
+                if ($this->isDirty('cost')) {
+                    $changes[] = 'Cost';
                 }
                 if ($this->isDirty('itinerary')) {
                     $changes[] = 'Itinerary';

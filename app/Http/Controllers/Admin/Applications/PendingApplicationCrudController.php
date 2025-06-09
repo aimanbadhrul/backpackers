@@ -57,10 +57,8 @@ class PendingApplicationCrudController extends ApplicationCrudController
         CRUD::addButton('line', 'delete', 'view', 'crud::buttons.delete');
         }
 
-        if ($user->hasRole('Event Leader') || $user->hasRole('Superadmin')) {
-            CRUD::addButtonFromModelFunction('line', 'reject', 'rejectButton', 'end');
-            CRUD::addButtonFromModelFunction('line', 'approve', 'approveButton', 'end');
-            }
+        CRUD::addButtonFromModelFunction('line', 'reject', 'rejectButton', 'end');
+        CRUD::addButtonFromModelFunction('line', 'approve', 'approveButton', 'end');
 
     }
 

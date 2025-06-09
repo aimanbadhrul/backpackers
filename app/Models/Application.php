@@ -66,57 +66,114 @@ class Application extends Model
 
     public function approveButton()
     {
-        if ($this->status !== 'pending') {
-            return ''; // No button if already approved/rejected
-        }
-    
-        $approveUrl = route('admin.application.approve', $this->id);
-    
+        $user = backpack_user();
 
-        return '<span class="float-end"><a href="' . $approveUrl . '" class="btn btn-sm btn-success" data-bs-toggle="tooltip" title="Approve">
-        <i class="la la-check"></i>Approve
-    </a></span>';
+        // No button if already approved/rejected
+        if ($this->status !== 'pending') {
+        return '';
+        }
+
+        // Superadmins can always approve
+        if ($user->hasRole('Superadmin')) {
+            $approveUrl = route('admin.application.approve', $this->id);
+            return '<span class="float-end"><a href="' . $approveUrl . '" class="btn btn-sm btn-success"    data-bs-toggle="tooltip" title="Approve">
+                <i class="la la-check"></i>Approve</a></span>';
+        }
+
+        // For Event Leaders and Office Admins: only allow if they created the event
+        if (
+            $user->can('approve applications') &&
+            $this->event &&
+            $this->event->created_by === $user->id
+        ) {
+            $approveUrl = route('admin.application.approve', $this->id);
+            return '<span class="float-end"><a href="' . $approveUrl . '" class="btn btn-sm btn-success"    data-bs-toggle="tooltip" title="Approve">
+                <i class="la la-check"></i>Approve</a></span>';
+        }
+
+        return ''; // Don’t show button if not allowed
     }
-    
+
     public function rejectButton()
     {
-        if ($this->status !== 'pending') {
-            return ''; // No button if already approved/rejected
-        }
-    
-        $rejectUrl = route('admin.application.reject', $this->id);
-    
+        $user = backpack_user();
 
-        return '<span class="float-end"><a href="' . $rejectUrl . '" class="ms-2 btn btn-sm  btn-danger" data-bs-toggle="tooltip" title="Reject">
-        <i class="la la-times"></i>Reject
-    </a></span>';
+        // No button if already approved/rejected
+        if ($this->status !== 'pending') {
+            return '';
+        }
+
+        // Superadmins can always reject
+        if ($user->hasRole('Superadmin')) {
+            $rejectUrl = route('admin.application.reject', $this->id);
+            return '<span class="float-end"><a href="' . $rejectUrl . '" class="ms-2 btn btn-sm btn-danger" data-bs-toggle="tooltip" title="Reject">
+            <i class="la la-times"></i>Reject</a></span>';
+        }
+
+        // For Event Leaders and Office Admins: only allow if they created the event
+        if (
+            $user->can('approve applications') &&
+            $this->event &&
+            $this->event->created_by === $user->id
+        ) {
+            $rejectUrl = route('admin.application.reject', $this->id);
+            return '<span class="float-end"><a href="' . $rejectUrl . '" class="ms-2 btn btn-sm btn-danger" data-bs-toggle="tooltip" title="Reject">
+            <i class="la la-times"></i>Reject</a></span>';
+        }
+
+        return ''; // Don’t show button if not allowed
     }
+
 
     public function approveButtonShow()
     {
+        $user = backpack_user();
         if ($this->status !== 'pending') {
             return ''; // No button if already approved/rejected
         }
 
-        $approveUrl = route('admin.application.approve', $this->id);
+        if ($user->hasRole('Superadmin')) {
+            $approveUrl = route('admin.application.approve', $this->id);
+            return '<a href="' . $approveUrl . '" class="btn btn-sm btn-success" title="Approve">
+            <i class="la la-check"></i>Approve</a>';
+        }
 
-
-        return '<a href="' . $approveUrl . '" class="btn btn-sm btn-success" title="Approve">
-        <i class="la la-check"></i>Approve
-        </a>';
+        // For Event Leaders and Office Admins: only allow if they created the event
+        if (
+            $user->can('approve applications') &&
+            $this->event &&
+            $this->event->created_by === $user->id
+        ) {
+            $approveUrl = route('admin.application.approve', $this->id);
+            return '<a href="' . $approveUrl . '" class="btn btn-sm btn-success" title="Approve">
+            <i class="la la-check"></i>Approve</a>';
+        }
+        return ''; // Don’t show button if not allowed
     }
     public function rejectButtonShow()
     {
+        $user = backpack_user();
         if ($this->status !== 'pending') {
             return ''; // No button if already approved/rejected
         }
 
-        $rejectUrl = route('admin.application.reject', $this->id);
+        if ($user->hasRole('Superadmin')) {
+            $rejectUrl = route('admin.application.reject', $this->id);
+            return '<a href="' . $rejectUrl . '" class="btn btn-sm btn-danger" title="Reject">
+            <i class="la la-check"></i>Reject</a>';
+        }
 
-
-        return '<a href="' . $rejectUrl . '" class="btn btn-sm btn-danger" title="Reject">
-                <i class="la la-times"></i>Reject
-            </a>';
+        // For Event Leaders and Office Admins: only allow if they created the event
+        if (
+            $user->can('approve applications') &&
+            $this->event &&
+            $this->event->created_by === $user->id
+        ) {
+            $rejectUrl = route('admin.application.reject', $this->id);
+            return '<a href="' . $rejectUrl . '" class="btn btn-sm btn-danger" title="Reject">
+            <i class="la la-check"></i>Reject</a>';
+        }
+        return ''; // Don’t show button if not allowed
     }
 
     // public function confirmButton()

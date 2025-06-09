@@ -411,7 +411,7 @@ class ApplicationCrudController extends CrudController
         $application->save();
 
         Alert::success('Application approved!')->flash();
-        return redirect()->back();
+        return redirect()->route('pending-application.index');
     }
     
     public function reject($id)
@@ -420,7 +420,7 @@ class ApplicationCrudController extends CrudController
         $application->update(['status' => 'rejected']);
     
         Alert::error('Application rejected!')->flash();
-        return redirect()->back();
+        return redirect()->route('pending-application.index');
     }
 
     public function confirm(Application $application)
