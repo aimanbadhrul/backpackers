@@ -66,7 +66,7 @@ class DraftEventCrudController extends EventCrudController
 
     protected function setupUpdateOperation()
     {
-        $this->setupCreateOperation();
+        parent::setupUpdateOperation();
         CRUD::setHeading('Edit Draft');
     }
 

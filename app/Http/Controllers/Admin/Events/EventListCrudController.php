@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin\Events;
 
+use App\Models\User;
 use App\Models\Event;
 use App\Http\Requests\EventListRequest;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
@@ -117,5 +118,72 @@ class EventListCrudController extends CrudController
     protected function setupUpdateOperation()
     {
         $this->setupCreateOperation();
+    }
+
+    protected function setupShowOperation()
+    {
+        CRUD::removeButton('update');
+        CRUD::removeButton('delete');
+            // ----------- Details Tab -----------
+        CRUD::addColumn([
+            'name' => 'title',
+            'label' => 'Event Title',
+            'type' => 'text',
+            'tab' => 'Details',
+        ]);
+        CRUD::addColumn([
+            'name' => 'location',
+            'label' => 'Location',
+            'type' => 'text',
+            'tab' => 'Details',
+        ]);
+        CRUD::addColumn([
+            'name' => 'start_date',
+            'label' => 'Start Date',
+            'type' => 'date',
+            'tab' => 'Details',
+        ]);
+        CRUD::addColumn([
+            'name' => 'end_date',
+            'label' => 'End Date',
+            'type' => 'date',
+            'tab' => 'Details',
+        ]);
+        CRUD::addColumn([
+            'name' => 'cost',
+            'label' => 'Cost (RM)',
+            'type' => 'float',
+            'tab' => 'Details',
+        ]);
+
+        CRUD::addColumn([
+            'name' => 'itinerary',
+            'label' => 'Itinerary',
+         'type' => 'custom_html',
+            'value' => fn ($entry) 
+            => $entry->itinerary ?: '<em>No itinerary available.</em>',
+            'escaped' => false,
+            'tab' => 'Itinerary',
+        ]);
+
+        CRUD::addColumn([
+            'name' => 'checklist',
+            'label' => 'Item Checklist',
+            'type' => 'custom_html',
+            'value' => fn ($entry) 
+            => $entry->checklist ?: '<em>No checklist provided.</em>',
+            'escaped' => false,
+            'tab' => 'Item Checklist',
+        ]);
+
+        CRUD::addColumn([
+            'name' => 'additional_info',
+            'label' => 'Additional Info',
+            'type' => 'custom_html',
+            'value' => fn ($entry) 
+            => $entry->additional_info ?: '<em>No additional info.</em>',
+            'escaped' => false,
+            'tab' => 'Additional Information',
+        ]);
     }
 }
